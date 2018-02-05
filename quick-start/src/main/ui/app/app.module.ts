@@ -60,6 +60,8 @@ import { FacetsComponent } from './facets/facets.component';
 import { ObjectToArrayPipe } from './object-to-array.pipe';
 import { DatePipeModule } from './date-pipe/date-pipe.module';
 
+import { MapComponent } from './map';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -97,7 +99,8 @@ import { DatePipeModule } from './date-pipe/date-pipe.module';
     FacetsComponent,
     TitlecasePipe,
     TruncateCharactersPipe,
-    ObjectToArrayPipe
+    ObjectToArrayPipe,
+    MapComponent
   ],
   entryComponents: [
     HasBugsDialogComponent,
