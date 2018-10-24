@@ -35,9 +35,11 @@ import com.marklogic.rest.util.Fragment
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
+import org.apache.commons.io.IOUtils
 import org.custommonkey.xmlunit.XMLUnit
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import org.json.JSONObject
 import org.junit.rules.TemporaryFolder
 import org.w3c.dom.Document
 import org.xml.sax.SAXException
@@ -46,6 +48,8 @@ import spock.lang.Specification
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
+
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -144,6 +148,19 @@ class BaseTest extends Specification {
         DocumentBuilder builder = factory.newDocumentBuilder()
         return builder.parse(new File("src/test/resources/" + resourceName).getAbsoluteFile())
     }
+	
+	protected InputStream getResourceStream(String resourceName) {
+		return BaseTest.class.getClassLoader().getResourceAsStream(resourceName)
+	}
+	
+	protected JSONObject getJsonResource(String fileLoc) {
+		try {
+			String jsonFileData = IOUtils.toString(new FileInputStream(new File(fileLoc)), "UTF-8")
+			return new JSONObject(jsonFileData)
+		} catch (IOException e) {
+			e.printStackTrace()
+		} 
+	}
 
     static void copyResourceToFile(String resourceName, File dest) {
         def file = new File("src/test/resources/" + resourceName)

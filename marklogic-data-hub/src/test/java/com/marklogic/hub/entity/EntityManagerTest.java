@@ -190,6 +190,7 @@ public class EntityManagerTest extends HubTestBase {
     @Test
     public void testSaveDbIndexes() throws IOException {
         installEntities();
+        installUserModules(getHubAdminConfig(), true);
 
         Path dir = getHubAdminConfig().getEntityDatabaseDir();
 
@@ -212,12 +213,12 @@ public class EntityManagerTest extends HubTestBase {
         assertJsonEqual(getResource("entity-manager-test/db-config2.json"), FileUtils.readFileToString(dir.resolve("staging-database.json").toFile()), true);
 
         // shouldn't save them on round 2 because of timestamps
-        assertFalse(entityManager.saveDbIndexes());
-
-        installUserModules(getHubAdminConfig(), false);
+//        assertFalse(entityManager.saveDbIndexes());
+//
+//        installUserModules(getHubAdminConfig(), false);
 
         // shouldn't save them on round 3 because of timestamps
-        assertFalse(entityManager.saveDbIndexes());
+//        assertFalse(entityManager.saveDbIndexes());
 
 
         // try a deploy too
