@@ -102,6 +102,7 @@ class DataHubPlugin implements Plugin<Project> {
         project.tasks.replace("mlUndeployPrivileges", UndeployHubPrivilegesTask);
         project.tasks.replace("mlClearModulesDatabase", ClearDHFModulesTask)
         project.tasks.replace("mlUpdateIndexes", UpdateIndexes)
+        project.tasks.replace("tasks", GradleTasks)
         project.tasks.mlDeploySecurity.getDependsOn().add("mlDeployRoles");
         project.tasks.mlDeploySecurity.getDependsOn().add("mlDeployUsers");
         project.tasks.mlUndeploySecurity.getDependsOn().add("mlUndeployRoles");
