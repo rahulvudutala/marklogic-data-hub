@@ -59,6 +59,7 @@ function extractInstanceFromModel(model, modelName, mapping, content) {
     sourceContext = '/*:envelope/*:instance' + sourceContext;
   }
   else{
+    sourceContext = '/*:envelope/*:instance' + sourceContext;
     content = new NodeBuilder().addNode(fn.head(content)).toNode();
   }
 
