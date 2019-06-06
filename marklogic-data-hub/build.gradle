@@ -378,7 +378,7 @@ task setupSSL{
     }
 }
 
-bootstrap.finalizedBy mlPrepareRestApiDependencies // ensures that marklogic-unit-test is downloaded
+bootstrap.finalizedBy mlPrepareBundles // ensures that marklogic-unit-test is downloaded
 
 setupSSL.dependsOn(testClasses)
 bootstrap.dependsOn(setupSSL)
