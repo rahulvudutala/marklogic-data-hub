@@ -21,7 +21,7 @@ repositories {
 group = 'com.marklogic'
 
 sourceCompatibility = 1.11
-targetCompatibility = 1.11
+targetCompatibility = 1.8
 
 
 ext.junit4Version        = '4.12'
