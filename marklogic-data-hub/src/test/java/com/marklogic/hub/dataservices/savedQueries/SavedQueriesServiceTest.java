@@ -6,12 +6,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.marklogic.client.FailedRequestException;
 import com.marklogic.client.io.DocumentMetadataHandle;
 import com.marklogic.hub.ApplicationConfig;
+import com.marklogic.hub.HubConfig;
 import com.marklogic.hub.HubTestBase;
 import com.marklogic.hub.dataservices.SavedQueriesService;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -25,16 +24,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = ApplicationConfig.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SavedQueriesServiceTest extends HubTestBase {
 
     private static JsonNode queryDoc;
     private SavedQueriesService savedQueriesService;
-
-    @BeforeAll
-    void createSavedQueriesServiceInstance() {
-        this.savedQueriesService = SavedQueriesService.on(adminHubConfig.newFinalClient(null));
-    }
 
     @BeforeEach
     void before() throws IOException {
@@ -75,6 +68,7 @@ public class SavedQueriesServiceTest extends HubTestBase {
                 "    \"propertiesToDisplay\": [\"facet1\", \"EntityTypeProperty1\"]\n" +
                 "  }\n" +
                 "}";
+        savedQueriesService = SavedQueriesService.on(adminHubConfig.newFinalClient(null));
         ObjectMapper mapper = new ObjectMapper();
         queryDoc = mapper.readTree(jsonString);
     }
@@ -90,9 +84,9 @@ public class SavedQueriesServiceTest extends HubTestBase {
         assertNotNull(firstResponse.get("savedQuery").get("systemMetadata"));
         assertEquals("some-query", firstResponse.get("savedQuery").get("name").asText());
         assertEquals(4, firstResponse.get("savedQuery").get("systemMetadata").size());
-        assertEquals("flow-developer", firstResponse.get("savedQuery").get("owner").asText());
-        assertEquals("flow-developer", firstResponse.get("savedQuery").get("systemMetadata").get("createdBy").asText());
-        assertPermissionsAndCollections("/saved-queries/" + id + ".json");
+        assertTrue(!firstResponse.get("savedQuery").get("owner").asText().isEmpty());
+        assertTrue(!firstResponse.get("savedQuery").get("systemMetadata").get("createdBy").asText().isEmpty());
+        assertPermissionsAndCollections(id);
 
         ObjectNode savedQueryNode = (ObjectNode) firstResponse.get("savedQuery");
         savedQueryNode.put("name", "modified-name");
@@ -100,9 +94,9 @@ public class SavedQueriesServiceTest extends HubTestBase {
 
         assertNotNull(modifiedResponse);
         assertEquals(id, modifiedResponse.get("savedQuery").get("id").asText());
-        assertEquals("flow-developer", modifiedResponse.get("savedQuery").get("owner").asText());
+        assertTrue(!firstResponse.get("savedQuery").get("owner").asText().isEmpty());
         assertEquals("modified-name", modifiedResponse.get("savedQuery").get("name").asText());
-        assertPermissionsAndCollections("/saved-queries/" + id + ".json");
+        assertPermissionsAndCollections(id);
     }
 
     @Test
@@ -157,7 +151,35 @@ public class SavedQueriesServiceTest extends HubTestBase {
         assertThrows(FailedRequestException.class, () -> savedQueriesService.saveSavedQuery(queryDoc));
     }
 
-    private void assertPermissionsAndCollections(String docUri) {
+    @Test
+    void testGetQueryDocuments() {
+        int docCount = getDocCount(HubConfig.DEFAULT_FINAL_NAME, "http://marklogic.com/data-hub/saved-query");
+        savedQueriesService.saveSavedQuery(queryDoc);
+        JsonNode savedQueries = savedQueriesService.getSavedQueries();
+        assertEquals(docCount + 1, savedQueries.size());
+    }
+
+    @Test
+    void testGetQueryDocument() {
+        JsonNode response =savedQueriesService.saveSavedQuery(queryDoc);
+        String id = response.get("savedQuery").get("id").asText();
+        JsonNode savedQuery = savedQueriesService.getSavedQuery(id);
+        assertEquals(id, savedQuery.get("savedQuery").get("id").asText());
+        assertTrue(!savedQuery.get("savedQuery").get("owner").asText().isEmpty());
+        assertEquals("some-query", savedQuery.get("savedQuery").get("name").asText());
+        assertEquals(4, savedQuery.get("savedQuery").get("systemMetadata").size());
+        assertPermissionsAndCollections(id);
+    }
+
+    @Test
+    void testGetQueryDocumentWithNonExistentId() {
+        String id = "some-random-id";
+        JsonNode savedQuery = savedQueriesService.getSavedQuery(id);
+        assertEquals(0, savedQuery.size());
+    }
+
+    private void assertPermissionsAndCollections(String id) {
+        String docUri = "/saved-queries/" + id + ".json";
         DocumentMetadataHandle metadataHandle = new DocumentMetadataHandle();
         finalDocMgr.readMetadata(docUri, metadataHandle);
         DocumentMetadataHandle.DocumentPermissions permissions = metadataHandle.getPermissions();

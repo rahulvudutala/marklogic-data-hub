@@ -47,14 +47,35 @@ public interface SavedQueriesService {
             private DatabaseClient dbClient;
             private BaseProxy baseProxy;
 
+            private BaseProxy.DBFunctionRequest req_getSavedQuery;
             private BaseProxy.DBFunctionRequest req_saveSavedQuery;
+            private BaseProxy.DBFunctionRequest req_getSavedQueries;
 
             private SavedQueriesServiceImpl(DatabaseClient dbClient, JSONWriteHandle servDecl) {
                 this.dbClient  = dbClient;
                 this.baseProxy = new BaseProxy("/data-hub/5/data-services/savedQueries/", servDecl);
 
+                this.req_getSavedQuery = this.baseProxy.request(
+                    "getSavedQuery.sjs", BaseProxy.ParameterValuesKind.SINGLE_ATOMIC);
                 this.req_saveSavedQuery = this.baseProxy.request(
                     "saveSavedQuery.sjs", BaseProxy.ParameterValuesKind.SINGLE_NODE);
+                this.req_getSavedQueries = this.baseProxy.request(
+                    "getSavedQueries.sjs", BaseProxy.ParameterValuesKind.NONE);
+            }
+
+            @Override
+            public com.fasterxml.jackson.databind.JsonNode getSavedQuery(String id) {
+                return getSavedQuery(
+                    this.req_getSavedQuery.on(this.dbClient), id
+                    );
+            }
+            private com.fasterxml.jackson.databind.JsonNode getSavedQuery(BaseProxy.DBFunctionRequest request, String id) {
+              return BaseProxy.JsonDocumentType.toJsonNode(
+                request
+                      .withParams(
+                          BaseProxy.atomicParam("id", false, BaseProxy.StringType.fromString(id))
+                          ).responseSingle(false, Format.JSON)
+                );
             }
 
             @Override
@@ -71,10 +92,30 @@ public interface SavedQueriesService {
                           ).responseSingle(false, Format.JSON)
                 );
             }
+
+            @Override
+            public com.fasterxml.jackson.databind.JsonNode getSavedQueries() {
+                return getSavedQueries(
+                    this.req_getSavedQueries.on(this.dbClient)
+                    );
+            }
+            private com.fasterxml.jackson.databind.JsonNode getSavedQueries(BaseProxy.DBFunctionRequest request) {
+              return BaseProxy.JsonDocumentType.toJsonNode(
+                request.responseSingle(false, Format.JSON)
+                );
+            }
         }
 
         return new SavedQueriesServiceImpl(db, serviceDeclaration);
     }
+
+  /**
+   * Invokes the getSavedQuery operation on the database server
+   *
+   * @param id	provides input
+   * @return	as output
+   */
+    com.fasterxml.jackson.databind.JsonNode getSavedQuery(String id);
 
   /**
    * Invokes the saveSavedQuery operation on the database server
@@ -83,5 +124,13 @@ public interface SavedQueriesService {
    * @return	as output
    */
     com.fasterxml.jackson.databind.JsonNode saveSavedQuery(com.fasterxml.jackson.databind.JsonNode saveQuery);
+
+  /**
+   * Invokes the getSavedQueries operation on the database server
+   *
+   *
+   * @return	as output
+   */
+    com.fasterxml.jackson.databind.JsonNode getSavedQueries();
 
 }

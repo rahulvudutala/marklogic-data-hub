@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
@@ -29,6 +30,18 @@ public class SavedQueriesController {
     @ResponseBody
     public ResponseEntity<JsonNode> updateQueryDocument(@RequestBody JsonNode queryDocument) {
         return new ResponseEntity<>(getSavedQueriesService().saveSavedQuery(queryDocument), HttpStatus.OK);
+    }
+
+    @RequestMapping(method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<JsonNode> getQueryDocuments() {
+        return new ResponseEntity<>(getSavedQueriesService().getSavedQueries(), HttpStatus.OK);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/query")
+    @ResponseBody
+    public ResponseEntity<JsonNode> getQueryDocument(@RequestParam String id) {
+        return new ResponseEntity<>(getSavedQueriesService().getSavedQuery(id), HttpStatus.OK);
     }
 
     private SavedQueriesService getSavedQueriesService() {
