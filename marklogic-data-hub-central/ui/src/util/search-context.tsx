@@ -99,7 +99,8 @@ const SearchProvider: React.FC<{ children: any }> = ({ children }) => {
         query: values.query.searchText,
         entityTypeIds: values.query.entityTypeIds,
         selectedFacets: values.query.selectedFacets,
-        pageLength: values.pageLength
+        pageLength: values.pageLength,
+        selectedQuery: values.selectedQuery
       });
     }
   }
