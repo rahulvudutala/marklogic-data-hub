@@ -135,7 +135,8 @@ const Browse: React.FC<Props> = ({ location }) => {
         selectedFacets: searchOptions.selectedFacets
       },
       pageLength: searchOptions.pageLength,
-      tableView: tableView
+      tableView: tableView,
+      currentQuery: searchOptions.selectedQuery
     }
     updateUserPreferences(user.name, preferencesObject);
 

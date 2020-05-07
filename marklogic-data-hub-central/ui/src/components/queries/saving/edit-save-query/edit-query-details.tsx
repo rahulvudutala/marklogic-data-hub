@@ -9,6 +9,8 @@ interface Props {
     currentQuery: any;
     currentQueryName: string;
     setCurrentQueryName: (name: string) => void;
+    currentQueryDescription: string;
+    setCurrentQueryDescription: (name: string) => void;
 }
 
 const EditQueryDetails: React.FC<Props> = (props) => {
@@ -61,7 +63,8 @@ const EditQueryDetails: React.FC<Props> = (props) => {
         } else {
             isQueryEmpty('error')
         }
-        props.setCurrentQueryName(queryName)
+        props.setCurrentQueryName(queryName);
+        props.setCurrentQueryDescription(queryDescription);
     }
 
 

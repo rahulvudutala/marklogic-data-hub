@@ -12,8 +12,10 @@ interface Props {
     greyFacets: any[];
     currentQueryName: string;
     setCurrentQueryName: (name: string) => void;
-    setCurrentQueryFn: (query:object) => void;
+    currentQueryDescription: string;
+    setCurrentQueryDescription: (name: string) => void;
     currentQuery: any;
+    setCurrentQueryFn: (query:object) => void;
     setSaveNewIconVisibility:(visibility:boolean)=> void;
 };
 
@@ -77,6 +79,7 @@ const SaveQueriesDropdown: React.FC<Props> = (props) => {
                 }
                 setAllSearchFacets(selectedFacets);
                 props.toggleApply(false);
+                props.setCurrentQueryDescription(response.data.savedQuery.description);
             }
         } catch (error) {
             handleError(error)

@@ -11,6 +11,8 @@ interface Props {
     toggleApplyClicked: (clicked:boolean) => void;
     currentQueryName: string;
     setCurrentQueryName: (name: string) => void;
+    currentQueryDescription: string;
+    setCurrentQueryDescription: (name: string) => void;
     setSaveNewIconVisibility: (clicked:boolean) => void;
 }
 
@@ -65,6 +67,7 @@ const SaveQueryModal: React.FC<Props> = (props) => {
             isQueryEmpty('error')
         }
         props.setCurrentQueryName(queryName);
+        props.setCurrentQueryDescription(queryDescription);
     }
 
     const handleChange = (event) => {
