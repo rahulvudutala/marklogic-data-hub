@@ -19,11 +19,10 @@ interface Props {
     setSaveNewIconVisibility:(visibility:boolean)=> void;
 };
 
-
 const SaveQueriesDropdown: React.FC<Props> = (props) => {
 
     const {Option} = Select;
-
+    const [queryDescription, setQueryDescription] = useState('');
     const {
         handleError,
         resetSessionTime
@@ -56,11 +55,12 @@ const SaveQueriesDropdown: React.FC<Props> = (props) => {
         props.setSaveNewIconVisibility(false)
     }
 
-    // useEffect(() => {
-    //     if (props.currentQueryName !== searchOptions.selectedQuery) {
-    //         setSelectedQuery(props.currentQueryName)
-    //     }
-    // });
+    useEffect(() => {
+        if (props.currentQueryName !== searchOptions.selectedQuery) {
+            setSelectedQuery(props.currentQueryName)
+        }
+        props.setCurrentQueryDescription(queryDescription);
+    });
 
     const getSaveQueryWithId = async (key) => {
         let searchText:string = '';
@@ -80,7 +80,8 @@ const SaveQueriesDropdown: React.FC<Props> = (props) => {
                 setAllSearchFacets(selectedFacets);
                 setSelectedQuery(response.data.savedQuery.name);
                 props.toggleApply(false);
-                props.setCurrentQueryDescription(response.data.savedQuery.description);
+                // props.setCurrentQueryDescription(response.data.savedQuery.description);
+                setQueryDescription(response.data.savedQuery.description);
             }
         } catch (error) {
             handleError(error)
