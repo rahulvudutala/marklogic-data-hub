@@ -56,11 +56,11 @@ const SaveQueriesDropdown: React.FC<Props> = (props) => {
         props.setSaveNewIconVisibility(false)
     }
 
-    useEffect(() => {
-        if (props.currentQueryName !== searchOptions.selectedQuery) {
-            setSelectedQuery(props.currentQueryName)
-        }
-    });
+    // useEffect(() => {
+    //     if (props.currentQueryName !== searchOptions.selectedQuery) {
+    //         setSelectedQuery(props.currentQueryName)
+    //     }
+    // });
 
     const getSaveQueryWithId = async (key) => {
         let searchText:string = '';
@@ -78,6 +78,7 @@ const SaveQueriesDropdown: React.FC<Props> = (props) => {
                     clearAllGreyFacets();
                 }
                 setAllSearchFacets(selectedFacets);
+                setSelectedQuery(response.data.savedQuery.name);
                 props.toggleApply(false);
                 props.setCurrentQueryDescription(response.data.savedQuery.description);
             }
