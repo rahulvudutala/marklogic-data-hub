@@ -14,6 +14,8 @@ interface Props {
     currentQuery: any
     currentQueryName: string;
     setCurrentQueryName: (name: string) => void;
+    currentQueryDescription: string;
+    setCurrentQueryDescription: (description: string) => void;
 }
 
 const SaveChangesModal: React.FC<Props> = (props) => {
@@ -96,6 +98,7 @@ const SaveChangesModal: React.FC<Props> = (props) => {
             isQueryEmpty('error')
         }
         props.setCurrentQueryName(queryName);
+        props.setCurrentQueryDescription(queryDescription);
     }
 
     const handleChange = (event) => {
