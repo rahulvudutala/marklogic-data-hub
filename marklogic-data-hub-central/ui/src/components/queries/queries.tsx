@@ -260,7 +260,9 @@ const Query = (props) => {
                 setQueries={setQueries}
                 toggleApply={toggleApply}
                 currentQueryName={currentQueryName}
-                setCurrentQueryName={setCurrentQueryName} />
+                setCurrentQueryName={setCurrentQueryName}
+                currentQueryDescription={currentQueryDescription}
+                setCurrentQueryDescription={setCurrentQueryDescription}/>
         </div>
     )
 }

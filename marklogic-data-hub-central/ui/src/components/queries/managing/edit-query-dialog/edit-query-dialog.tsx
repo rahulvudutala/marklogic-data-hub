@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import { Modal, Form, Input, Button } from 'antd';
 import styles from './edit-query-dialog.module.scss';
+import {SearchContext} from "../../../../util/search-context";
 
 
 const EditQueryDialog = (props) => {
@@ -10,6 +11,9 @@ const EditQueryDialog = (props) => {
     const [queryDescription, setQueryDescription] = useState('');
     const [isQueryNameTouched, setQueryNameTouched] = useState(false);
     const [isQueryDescriptionTouched, setQueryDescriptionTouched] = useState(false);
+    const {
+        applySaveQuery
+    } = useContext(SearchContext);
 
     useEffect(() => {
         if (props.query && JSON.stringify(props.query) != JSON.stringify({}) && props.query.hasOwnProperty('savedQuery') && props.query.savedQuery.hasOwnProperty('name')) {
@@ -69,7 +73,10 @@ const EditQueryDialog = (props) => {
 
         if (status.code === 200) {
             props.setEditModalVisibility(false);
+            applySaveQuery(query['savedQuery']['query']['searchText'], query['savedQuery']['query']['entityTypeIds'], query['savedQuery']['query']['selectedFacets'])
             props.setCurrentQueryName(queryName);
+            props.setCurrentQueryDescription(queryDescription);
+
         }
     }
 
