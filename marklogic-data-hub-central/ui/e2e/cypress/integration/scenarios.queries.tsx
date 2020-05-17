@@ -68,10 +68,119 @@ describe('save/manage queries scenarios, developer role', () => {
         browsePage.getSelectedQueryDescription().should('contain', 'new-query-2 description');
         browsePage.getAppliedFacets('Adams').should('exist');
         cy.reload();
+        cy.wait(500);
         homePage.getBrowseEntities().click();
         cy.wait(1000);
         browsePage.getSelectedQuery().should('contain', 'new-query-2');
         browsePage.getSelectedQueryDescription().should('contain', 'new-query-2 description');
+    });
+
+    it('save/saveAs/edit more queries with duplicate query name from browse and manage queries view', () => {
+        browsePage.selectQuery("new-query-2");
+        browsePage.getSelectedQuery().should('contain', 'new-query-2');
+        cy.wait(500);
+        browsePage.getFacetItemCheckbox('email', 'laraadams@emoltra.com').click();
+
+        // clicking on save changes icon
+        browsePage.getSaveModalIcon().click();
+        browsePage.getEditSaveChangesFormName().invoke('val').should('contain', 'new-query-2');
+        browsePage.getEditSaveChangesFormName().clear();
+        browsePage.getEditSaveChangesFormName().type("new-query");
+        browsePage.getEditSaveChangesButton().click();
+        browsePage.getErrorMessage().should('contain', 'A query already exists with a name of new-query');
+        browsePage.getEditSaveChangesCancelButton().click();
+        // checking previous query name is set clicking save modal icon
+        browsePage.getSaveModalIcon().click();
+        browsePage.getEditSaveChangesFormName().invoke('val').should('contain', 'new-query-2');
+        browsePage.getEditSaveChangesCancelButton().click();
+        // checking previous query name is set clicking edit modal icon
+        browsePage.getEditQueryModalIcon().click();
+        browsePage.getEditQueryDetailFormName().invoke('val').should('contain', 'new-query-2');
+        browsePage.getEditQueryDetailCancelButton().click();
+        // checking previous query name is set clicking save a copy modal icon
+        browsePage.getSaveACopyModalIcon().click();
+        browsePage.getSaveQueryName().invoke('val').should('be.empty');
+        browsePage.getSaveQueryCancelButton().click();
+
+        // clicking on edit changes icon
+        browsePage.getEditQueryModalIcon().click();
+        browsePage.getEditQueryDetailFormName().invoke('val').should('contain', 'new-query-2');
+        browsePage.getEditQueryDetailFormName().clear();
+        browsePage.getEditQueryDetailFormName().type("new-query");
+        browsePage.getEditQueryDetailButton().click();
+        browsePage.getErrorMessage().should('contain', 'A query already exists with a name of new-query');
+        browsePage.getEditQueryDetailCancelButton().click();
+        // checking previous query name is set clicking save modal icon
+        browsePage.getSaveModalIcon().click();
+        browsePage.getEditSaveChangesFormName().invoke('val').should('contain', 'new-query-2');
+        browsePage.getEditSaveChangesCancelButton().click();
+        // checking previous query name is set clicking edit modal icon
+        browsePage.getEditQueryModalIcon().click();
+        browsePage.getEditQueryDetailFormName().invoke('val').should('contain', 'new-query-2');
+        browsePage.getEditQueryDetailCancelButton().click();
+        // checking previous query name is set clicking save a copy modal icon
+        browsePage.getSaveACopyModalIcon().click();
+        browsePage.getSaveQueryName().invoke('val').should('be.empty');
+        browsePage.getSaveQueryCancelButton().click();
+
+        // clicking on save a copy icon
+        browsePage.getSaveACopyModalIcon().click();
+        browsePage.getSaveQueryName().clear();
+        browsePage.getSaveQueryName().type("new-query");
+        browsePage.getSaveQueryButton().click();
+        browsePage.getErrorMessage().should('contain', 'A query already exists with a name of new-query');
+        browsePage.getSaveQueryCancelButton().click();
+        // checking previous query name is set clicking save modal icon
+        browsePage.getSaveModalIcon().click();
+        browsePage.getEditSaveChangesFormName().invoke('val').should('contain', 'new-query-2');
+        browsePage.getEditSaveChangesCancelButton().click();
+        // checking previous query name is set clicking edit modal icon
+        browsePage.getEditQueryModalIcon().click();
+        browsePage.getEditQueryDetailFormName().invoke('val').should('contain', 'new-query-2');
+        browsePage.getEditQueryDetailCancelButton().click();
+        // checking previous query name is set clicking save a copy modal icon
+        browsePage.getSaveACopyModalIcon().click();
+        browsePage.getSaveQueryName().invoke('val').should('be.empty');
+        browsePage.getSaveQueryCancelButton().click();
+
+        // checking manage query
+        browsePage.getManageQueriesIcon().click();
+        queryComponent.getManageQueryModal().should('be.visible');
+        queryComponent.getEditQuery().click();
+        queryComponent.getEditQueryName().invoke('text').as('qName');
+        queryComponent.getEditQueryName().invoke('val').then(
+            ($someVal) => {
+                if($someVal === "new-query-2") {
+                    queryComponent.getEditQueryName().clear();
+                    queryComponent.getEditQueryName().type('new-query');
+                    queryComponent.getSubmitButton().click();
+                    queryComponent.getErrorMessage().should('contain', 'A query already exists with a name of new-query');
+                } else {
+                    queryComponent.getEditQueryName().clear();
+                    queryComponent.getEditQueryName().type('new-query-2');
+                    queryComponent.getSubmitButton().click();
+                    queryComponent.getErrorMessage().should('contain', 'A query already exists with a name of new-query-2');
+                }
+            }
+        );
+        queryComponent.getEditCancelButton().click();
+        queryComponent.getManageQueryModal().type('{esc}');
+        // checking previous query name is set clicking save modal icon
+        browsePage.getSaveModalIcon().click();
+        cy.get('@qName').then((qName) => {
+            browsePage.getEditSaveChangesFormName().invoke('val').should('contain', qName);
+        });
+        browsePage.getEditSaveChangesCancelButton().click();
+        // checking previous query name is set clicking edit modal icon
+        browsePage.getEditQueryModalIcon().first().click();
+        cy.get('@qName').then((qName) => {
+            browsePage.getEditQueryDetailFormName().invoke('val').should('contain', qName);
+        })
+        browsePage.getEditQueryDetailCancelButton().click();
+        // checking previous query name is set clicking save a copy modal icon
+        browsePage.getSaveACopyModalIcon().click();
+        browsePage.getSaveQueryName().invoke('val').should('be.empty');
+        browsePage.getSaveQueryCancelButton().click();
     });
 
     it('Edit saved query and verify discard changes functionality', () => {
@@ -130,8 +239,6 @@ describe('save/manage queries scenarios, developer role', () => {
         browsePage.getSelectedQuery().should('contain', 'select a query');
         browsePage.getSelectedQueryDescription().should('contain', '');
     });
-
-
 
 });
 

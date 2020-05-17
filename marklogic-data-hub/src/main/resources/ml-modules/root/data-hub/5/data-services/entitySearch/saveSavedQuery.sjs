@@ -43,7 +43,15 @@ if (queryDocument.savedQuery.propertiesToDisplay == null || queryDocument.savedQ
     ds.throwBadRequest("Entity type properties to be displayed cannot be empty");
 }
 
-let id = queryDocument.savedQuery.id;
+const id = queryDocument.savedQuery.id;
+const positiveQuery = cts.andQuery([cts.collectionQuery("http://marklogic.com/data-hub/saved-query"), cts.jsonPropertyValueQuery("name", queryDocument.savedQuery.name),
+    cts.jsonPropertyValueQuery("owner", xdmp.getCurrentUser())]);
+const negativeQuery = cts.documentQuery("/saved-queries/" + id + ".json");
+const queryNameExists = cts.exists(cts.andNotQuery(positiveQuery, negativeQuery));
+if(queryNameExists) {
+    ds.throwBadRequest(`A query already exists with a name of ${queryDocument.savedQuery.name}`);
+}
+
 if (cts.doc("/saved-queries/" + id + ".json")) {
     queryDocument.savedQuery.systemMetadata.lastUpdatedBy = xdmp.getCurrentUser();
     queryDocument.savedQuery.systemMetadata.lastUpdatedDateTime = fn.currentDateTime();
