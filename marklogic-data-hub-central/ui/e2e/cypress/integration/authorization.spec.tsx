@@ -42,7 +42,8 @@ describe('login', () => {
     cy.loginAsDeveloper()
     .wait(500)
     .url()
-    .should('include', '/home');
+     .should('include', '/tile')
+    // .should('include', '/home');
   });
 
 });

@@ -19,6 +19,10 @@ describe('xml scenario on view entities page', () => {
     cy.contains('MarkLogic Data Hub');
     cy.loginAsDeveloper();
     cy.wait(500);
+    // temporary change as tile is not working
+    homePage.getTitle().click();
+    cy.wait(500);
+    // temporary change end here
     homePage.getViewEntities().click();
     //cy.visit('/view');
   });
@@ -55,6 +59,10 @@ describe('xml scenario on browse documents page', () => {
     cy.contains('MarkLogic Data Hub');
     cy.loginAsDeveloper();
     cy.wait(500);
+    // temporary change as tile is not working
+    homePage.getTitle().click();
+    cy.wait(500);
+    // temporary change end here
     homePage.getBrowseEntities().click();
     //cy.visit('/browse');
     // cy.get('.ant-menu-item').contains('Browse Documents').click();
@@ -200,6 +208,10 @@ describe('xml scenario for table on browse documents page', () => {
     cy.contains('MarkLogic Data Hub');
     cy.loginAsDeveloper();
     cy.wait(500);
+    // temporary change as tile is not working
+    homePage.getTitle().click();
+    cy.wait(500);
+    // temporary change end here
     //cy.contains('Browse Entities');
     homePage.getBrowseEntities().click();
     //cy.visit('/browse');
