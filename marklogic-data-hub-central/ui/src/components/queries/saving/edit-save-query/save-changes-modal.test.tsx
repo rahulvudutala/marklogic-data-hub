@@ -24,6 +24,7 @@ describe("<SaveChangesModal/>", () => {
             toggleApplyClicked={jest.fn()}
             setSaveNewIconVisibility={jest.fn()}
             currentQuery={currentQuery}
+            setCurrentQuery={jest.fn()}
             currentQueryName={''}
             setCurrentQueryName={jest.fn()}
             currentQueryDescription={''}
@@ -48,6 +49,7 @@ describe("<SaveChangesModal/>", () => {
             toggleApplyClicked={jest.fn()}
             setSaveNewIconVisibility={jest.fn()}
             currentQuery={currentQuery}
+            setCurrentQuery={jest.fn()}
             currentQueryName={''}
             setCurrentQueryName={jest.fn()}
             currentQueryDescription={''}
@@ -128,7 +130,7 @@ describe("<SaveChangesModal/>", () => {
         let url = "/api/entitySearch/savedQueries";
         expect(axiosMock.put).toHaveBeenCalledWith(url, payload);
         expect(axiosMock.put).toHaveBeenCalledTimes(1);
-        expect(getByText('A query already exists with a name of edit new query')).toBeInTheDocument();
+        expect(getByText('You already have a saved query with a name of edit new query')).toBeInTheDocument();
     });
 
 });

@@ -43,7 +43,6 @@ describe('login', () => {
     .wait(500)
     .url()
      .should('include', '/tile')
-    // .should('include', '/home');
   });
 
 });

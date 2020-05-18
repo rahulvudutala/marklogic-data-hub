@@ -117,7 +117,7 @@ describe("<EditQueryDetails/>", () => {
             }};
         expect(axiosMock.put).toHaveBeenCalledWith(url, payload);
         expect(axiosMock.put).toHaveBeenCalledTimes(1);
-        expect(getByText('A query already exists with a name of edit new query')).toBeInTheDocument();
+        expect(getByText('You already have a saved query with a name of edit new query')).toBeInTheDocument();
     });
 
 });

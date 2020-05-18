@@ -45,7 +45,6 @@ const QueryModal = (props) => {
     }
 
     const editQuery = async (query) => {
-        //const response = await updateQuery(query);
         const response = await axios.put(`/api/entitySearch/savedQueries`, query);
         if (response.data) {
             props.setQueries(response.data);

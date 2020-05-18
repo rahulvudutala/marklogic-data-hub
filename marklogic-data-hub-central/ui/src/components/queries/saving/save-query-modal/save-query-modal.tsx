@@ -66,31 +66,27 @@ const SaveQueryModal: React.FC<Props> = (props) => {
                 props.toggleApplyClicked(true);
                 props.toggleApply(false);
         }
-        if(queryName.length > 0 && queryName.trim().length !== 0){
-            try {
-                await props.saveNewQuery(queryName, queryDescription, facets);
-                props.setSaveNewIconVisibility(false);
-                props.setSaveModalVisibility();
-                applySaveQuery(searchOptions.query, searchOptions.entityTypeIds, facets, queryName);
-                props.setCurrentQueryName(queryName);
-                props.setCurrentQueryDescription(queryDescription);
-            } catch (error) {
-                if (error.response.status === 400) {
-                    console.log("here")
-                    if (error.response.data.hasOwnProperty('message')) {
-                        setErrorMessage(error['response']['data']['message']);
-                        setAllSearchFacets(selectedFacets);
-                        setAllGreyedOptions(greyedFacets);
-                    }
-                } else {
-                    handleError(error);
+
+        try {
+            await props.saveNewQuery(queryName.trim(), queryDescription, facets);
+            props.setSaveNewIconVisibility(false);
+            props.setSaveModalVisibility();
+            applySaveQuery(searchOptions.query, searchOptions.entityTypeIds, facets, queryName);
+            props.setCurrentQueryName(queryName);
+            props.setCurrentQueryDescription(queryDescription);
+        } catch (error) {
+            if (error.response.status === 400) {
+                console.log("here")
+                if (error.response.data.hasOwnProperty('message')) {
+                    setErrorMessage(error['response']['data']['message']);
+                    setAllSearchFacets(selectedFacets);
+                    setAllGreyedOptions(greyedFacets);
                 }
-            } finally {
-                // props.setIsLoading(true);
-                resetSessionTime();
+            } else {
+                handleError(error);
             }
-        } else {
-            isQueryEmpty('error')
+        } finally {
+            resetSessionTime();
         }
     }
 

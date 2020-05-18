@@ -40,13 +40,7 @@ let saveQuery = JSON.stringify({
   }
 });
 
-function beforeEach() {
-  declareUpdate();
-  xdmp.collectionDelete("http://marklogic.com/data-hub/saved-query");
-}
-
 function testSaveAndModifyQuery() {
-  xdmp.invokeFunction(beforeEach, {transactionMode:'update-auto-commit'});
   let insertedQuery = entitySearchService.saveQuery(saveQuery);
   const uri = "/saved-queries/" + insertedQuery.savedQuery.id + ".json";
   const permissions = JSON.parse(xdmp.invokeFunction(() => {
@@ -90,8 +84,6 @@ function testSaveAndModifyQuery() {
 }
 
 function testSaveAndModifyQueryExceptions() {
-  xdmp.invokeFunction(beforeEach, {transactionMode:'update-auto-commit'});
-
   let tempQuery = JSON.parse(saveQuery);
   tempQuery['savedQuery'] = undefined;
   assertions.push(test.assertThrowsError(xdmp.function(xs.QName('entitySearchService.saveQuery')), JSON.stringify(tempQuery), null));
@@ -129,61 +121,6 @@ function testSaveAndModifyQueryExceptions() {
   return assertions;
 }
 
-function testGetQuery() {
-  xdmp.invokeFunction(beforeEach, {transactionMode:'update-auto-commit'});
-  let id = entitySearchService.saveQuery(saveQuery).savedQuery.id;
-  let result = JSON.parse(entitySearchService.getSavedQuery(id));
-  assertions.push(
-      test.assertNotEqual(null, result),
-      test.assertNotEqual(null, result.savedQuery),
-      test.assertNotEqual(null, result.savedQuery.systemMetadata),
-      test.assertEqual(id, result.savedQuery.id),
-      test.assertEqual(xdmp.getCurrentUser(), result.savedQuery.owner),
-      test.assertEqual(4, Object.keys(result.savedQuery.systemMetadata).length)
-  );
-
-  id = "some-non-existent-query-id";
-  result = entitySearchService.getSavedQuery(id);
-  assertions.push(
-      test.assertNotEqual(null, result),
-      test.assertEqual(null, result.savedQuery),
-      test.assertEqual(0, Object.keys(result).length)
-  );
-}
-
-function testGetQueries() {
-  xdmp.invokeFunction(beforeEach, {transactionMode:'update-auto-commit'});
-  entitySearchService.saveQuery(saveQuery);
-  const result = entitySearchService.getSavedQueries();
-  assertions.push(
-      test.assertNotEqual(null, result),
-      test.assertEqual(1, result.length)
-  );
-  return assertions;
-}
-
-function testDeleteQuery() {
-  xdmp.invokeFunction(beforeEach,{transactionMode:'update-auto-commit'});
-  let id = entitySearchService.saveQuery(saveQuery).savedQuery.id;
-  let result = entitySearchService.deleteSavedQuery(id);
-  let resultAfterDeletion = entitySearchService.getSavedQueries();
-  assertions.push(
-      test.assertEqual(null, result),
-      test.assertEqual(0, resultAfterDeletion.length)
-  );
-
-  id = "some-non-existent-query-id";
-  result = JSON.parse(entitySearchService.deleteSavedQuery(id));
-  assertions.push(
-      test.assertEqual(null, result)
-  );
-
-  return assertions;
-}
-
 []
     .concat(testSaveAndModifyQuery())
-    .concat(testSaveAndModifyQueryExceptions())
-    .concat(testGetQuery())
-    .concat(testGetQueries())
-    .concat(testDeleteQuery());
+    .concat(testSaveAndModifyQueryExceptions());

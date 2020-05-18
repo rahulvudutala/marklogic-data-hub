@@ -70,7 +70,7 @@ const EditQueryDialog = (props) => {
 
     const handleSubmit = async (event: { preventDefault: () => void; }) => {
         if (event) event.preventDefault();
-        query.savedQuery.name = queryName;
+        query.savedQuery.name = queryName.trim();
         query.savedQuery.description = queryDescription;
         try {
             let status = await props.editQuery(query);
@@ -81,7 +81,6 @@ const EditQueryDialog = (props) => {
         } catch (error) {
             if (error.response.status === 400) {
                 if (error.response.data.hasOwnProperty('message')) {
-                    console.log(error['response']['data']['message']);
                     setErrorMessage(error['response']['data']['message']);
                 }
             } else {

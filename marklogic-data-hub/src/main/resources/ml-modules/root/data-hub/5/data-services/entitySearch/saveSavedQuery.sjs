@@ -32,7 +32,7 @@ if (queryDocument == null || queryDocument.savedQuery == null) {
 }
 
 if (queryDocument.savedQuery.name == null || !queryDocument.savedQuery.name) {
-    ds.throwBadRequest("Query name is missing");
+    ds.throwBadRequest("Query name is required");
 }
 
 if (queryDocument.savedQuery.query == null || Object.keys(queryDocument.savedQuery.query) == 0) {
@@ -49,7 +49,7 @@ const positiveQuery = cts.andQuery([cts.collectionQuery("http://marklogic.com/da
 const negativeQuery = cts.documentQuery("/saved-queries/" + id + ".json");
 const queryNameExists = cts.exists(cts.andNotQuery(positiveQuery, negativeQuery));
 if(queryNameExists) {
-    ds.throwBadRequest(`A query already exists with a name of ${queryDocument.savedQuery.name}`);
+    ds.throwBadRequest(`You already have a saved query with a name of ${queryDocument.savedQuery.name}`);
 }
 
 if (cts.doc("/saved-queries/" + id + ".json")) {

@@ -18,7 +18,6 @@ describe('table test scenarios', () => {
     cy.wait(500);
     // temporary change end here
     homePage.getBrowseEntities().click();
-    //cy.visit('/browse');
   });
 
   it('has table', () => {
@@ -50,7 +49,6 @@ describe('column selector test scenarios', () => {
     cy.wait(500);
     // temporary change end here
     homePage.getBrowseEntities().click();
-    //cy.visit('/browse');
   });
 
   it('has columns selector popover', () => {

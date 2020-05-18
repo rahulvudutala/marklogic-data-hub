@@ -1,9 +1,5 @@
 class BrowsePage {
 
-  /*getSelectedEntity() {
-    return cy.get('.ant-select-selection').invoke('attr', 'data-cy');
-  }*/
-
   getSelectedEntity() {
     return cy.get('.ant-select-selection-selected-value').invoke('text')
   }

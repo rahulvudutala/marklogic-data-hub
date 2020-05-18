@@ -63,17 +63,6 @@ const Query = (props) => {
         await creatNewQuery(query);
         setOpenSaveModal(false);
         getSaveQueries();
-        // try {
-        //     props.setIsLoading(true);
-        //     await creatNewQuery(query);
-        //     setOpenSaveModal(false);
-        //     getSaveQueries();
-        // } catch (error) {
-        //     handleError(error);
-        // } finally {
-        //     props.setIsLoading(false);
-        //     resetSessionTime();
-        // }
     }
 
     const getSaveQueries = async () => {

@@ -68,8 +68,6 @@ const SaveChangesModal: React.FC<Props> = (props) => {
         let greyedFacets = greyedOptions.selectedFacets;
         switch(radioOptionClicked) {
             case 1:
-               // setAllSearchFacets(searchOptions.selectedFacets);
-               // setAllSearchFacets(greyedOptions.selectedFacets);
                 facets = {...facets,...greyedOptions.selectedFacets};
                 clearAllGreyFacets();
                 props.toggleApplyClicked(true);
@@ -82,39 +80,35 @@ const SaveChangesModal: React.FC<Props> = (props) => {
                 props.toggleApplyClicked(true);
                 props.toggleApply(false);
         }
-        if (queryName.length > 0 && queryName.trim().length !== 0) {
-            currentQuery.savedQuery.name = queryName;
+
+        try {
+            currentQuery.savedQuery.name = queryName.trim();
             currentQuery.savedQuery.description = queryDescription;
             if(currentQuery.hasOwnProperty('savedQuery') && currentQuery.savedQuery.hasOwnProperty('query')){
                 currentQuery.savedQuery.query.selectedFacets = facets;
                 currentQuery.savedQuery.query.searchText = searchOptions.query;
                 currentQuery.savedQuery.query.entityTypeIds = searchOptions.entityTypeIds;
             }
-            try {
-                //const response = await updateQuery(currentQuery);
-                const response = await axios.put(`/api/entitySearch/savedQueries`, currentQuery);
-                if (response.data) {
-                    setAllSearchFacets(facets);
-                    props.setSaveChangesModalVisibility();
-                    applySaveQuery(searchOptions.query, searchOptions.entityTypeIds, facets, queryName);
-                    props.setCurrentQueryDescription(queryDescription);
-                }
-            } catch (error) {
-                if (error.response.status === 400) {
-                    if (error.response.data.hasOwnProperty('message')) {
-                        setErrorMessage(error['response']['data']['message']);
-                        setAllSearchFacets(selectedFacets);
-                        setAllGreyedOptions(greyedFacets);
-                        props.currentQuery.savedQuery.name = previousQueryName;
-                    }
-                } else {
-                    handleError(error);
-                }
-            } finally {
-                resetSessionTime();
+            const response = await axios.put(`/api/entitySearch/savedQueries`, currentQuery);
+            if (response.data) {
+                setAllSearchFacets(facets);
+                props.setSaveChangesModalVisibility();
+                applySaveQuery(searchOptions.query, searchOptions.entityTypeIds, facets, queryName);
+                props.setCurrentQueryDescription(queryDescription);
             }
-        } else {
-            isQueryEmpty('error')
+        } catch (error) {
+            if (error.response.status === 400) {
+                if (error.response.data.hasOwnProperty('message')) {
+                    setErrorMessage(error['response']['data']['message']);
+                    setAllSearchFacets(selectedFacets);
+                    setAllGreyedOptions(greyedFacets);
+                    props.currentQuery.savedQuery.name = previousQueryName;
+                }
+            } else {
+                handleError(error);
+            }
+        } finally {
+            resetSessionTime();
         }
     }
 

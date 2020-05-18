@@ -54,33 +54,28 @@ const EditQueryDetails: React.FC<Props> = (props) => {
     }
 
     const onOk = async (queryName, queryDescription, currentQuery) => {
-        if (queryName.length > 0 && queryName.trim().length !== 0) {
-            currentQuery.savedQuery.name = queryName;
+        try {
+            currentQuery.savedQuery.name = queryName.trim();
             currentQuery.savedQuery.description = queryDescription;
-            try {
-                //const response = await updateQuery(currentQuery);
-                const response = await axios.put(`/api/entitySearch/savedQueries`, currentQuery);
-                if (response.data) {
-                    props.setEditQueryDetailVisibility();
-                    setSelectedQuery(queryName);
-                    props.setCurrentQueryDescription(queryDescription);
-                }
-            } catch (error) {
-                if (error.response.status === 400) {
-                    if (error.response.data.hasOwnProperty('message')) {
-                        setErrorMessage(error['response']['data']['message']);
-                        props.currentQuery.savedQuery.name = previousQueryName;
-                    }
-                } else {
-                    handleError(error);
-                }
-            } finally {
-                resetSessionTime();
+            const response = await axios.put(`/api/entitySearch/savedQueries`, currentQuery);
+            if (response.data) {
+                props.setEditQueryDetailVisibility();
+                setSelectedQuery(queryName);
+                props.setCurrentQueryDescription(queryDescription);
             }
-        } else {
-            isQueryEmpty('error')
+        } catch (error) {
+            if (error.response.status === 400) {
+                if (error.response.data.hasOwnProperty('message')) {
+                    setErrorMessage(error['response']['data']['message']);
+                    props.currentQuery.savedQuery.name = previousQueryName;
+                }
+            } else {
+                handleError(error);
+            }
+        } finally {
+            resetSessionTime();
         }
-    }
+    };
 
 
     const handleChange = (event) => {

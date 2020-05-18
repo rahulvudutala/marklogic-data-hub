@@ -1,16 +1,10 @@
 /// <reference types="cypress"/>
 
-import LoginPage from '../support/pages/login';
-import ViewPage from '../support/pages/view';
 import BrowsePage from '../support/pages/browse';
-import DetailPage from '../support/pages/detail';
 import HomePage from "../support/pages/home";
 import QueryComponent from '../support/components/query/manage-queries-modal'
-import { exists } from 'fs';
 
-const viewPage = new ViewPage();
 const browsePage = new BrowsePage();
-const detailPage = new DetailPage();
 const homePage = new HomePage();
 const queryComponent = new QueryComponent();
 
@@ -95,7 +89,7 @@ describe('save/manage queries scenarios, developer role', () => {
         browsePage.getEditSaveChangesFormName().clear();
         browsePage.getEditSaveChangesFormName().type("new-query");
         browsePage.getEditSaveChangesButton().click();
-        browsePage.getErrorMessage().should('contain', 'A query already exists with a name of new-query');
+        browsePage.getErrorMessage().should('contain', 'You already have a saved query with a name of new-query');
         browsePage.getEditSaveChangesCancelButton().click();
         // checking previous query name is set clicking save modal icon
         browsePage.getSaveModalIcon().click();
@@ -116,7 +110,7 @@ describe('save/manage queries scenarios, developer role', () => {
         browsePage.getEditQueryDetailFormName().clear();
         browsePage.getEditQueryDetailFormName().type("new-query");
         browsePage.getEditQueryDetailButton().click();
-        browsePage.getErrorMessage().should('contain', 'A query already exists with a name of new-query');
+        browsePage.getErrorMessage().should('contain', 'You already have a saved query with a name of new-query');
         browsePage.getEditQueryDetailCancelButton().click();
         // checking previous query name is set clicking save modal icon
         browsePage.getSaveModalIcon().click();
@@ -136,7 +130,7 @@ describe('save/manage queries scenarios, developer role', () => {
         browsePage.getSaveQueryName().clear();
         browsePage.getSaveQueryName().type("new-query");
         browsePage.getSaveQueryButton().click();
-        browsePage.getErrorMessage().should('contain', 'A query already exists with a name of new-query');
+        browsePage.getErrorMessage().should('contain', 'You already have a saved query with a name of new-query');
         browsePage.getSaveQueryCancelButton().click();
         // checking previous query name is set clicking save modal icon
         browsePage.getSaveModalIcon().click();
@@ -162,12 +156,12 @@ describe('save/manage queries scenarios, developer role', () => {
                     queryComponent.getEditQueryName().clear();
                     queryComponent.getEditQueryName().type('new-query');
                     queryComponent.getSubmitButton().click();
-                    queryComponent.getErrorMessage().should('contain', 'A query already exists with a name of new-query');
+                    queryComponent.getErrorMessage().should('contain', 'You already have a saved query with a name of new-query');
                 } else {
                     queryComponent.getEditQueryName().clear();
                     queryComponent.getEditQueryName().type('new-query-2');
                     queryComponent.getSubmitButton().click();
-                    queryComponent.getErrorMessage().should('contain', 'A query already exists with a name of new-query-2');
+                    queryComponent.getErrorMessage().should('contain', 'You already have a saved query with a name of new-query-2');
                 }
             }
         );
