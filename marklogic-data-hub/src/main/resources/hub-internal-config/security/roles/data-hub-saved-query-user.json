@@ -1,0 +1,7 @@
+{
+  "role-name": "data-hub-saved-query-user",
+  "description": "Permits reading saved query documents",
+  "role": [
+    "data-hub-common-writer"
+  ]
+}
