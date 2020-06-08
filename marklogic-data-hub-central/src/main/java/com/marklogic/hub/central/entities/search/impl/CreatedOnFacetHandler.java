@@ -21,33 +21,91 @@ import com.marklogic.client.query.StructuredQueryDefinition;
 import com.marklogic.hub.central.entities.search.Constants;
 import com.marklogic.hub.central.entities.search.FacetHandler;
 import com.marklogic.hub.central.entities.search.models.DocSearchQueryInfo;
+import com.marklogic.hub.central.exceptions.DataHubException;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAdjusters;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CreatedOnFacetHandler implements FacetHandler {
 
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    public static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 
     @Override
     public StructuredQueryDefinition buildQuery(DocSearchQueryInfo.FacetData data, StructuredQueryBuilder queryBuilder) {
-        // Converting the date in string format from yyyy-MM-dd format to yyyy-MM-dd HH:mm:ss format
-        LocalDate startDate = LocalDate.parse(data.getRangeValues().getLowerBound(), DATE_FORMAT);
-        String startDateTime = startDate.atStartOfDay(ZoneId.systemDefault())
-                .format(DATE_TIME_FORMAT);
+        Map<String, String> dateRange = computeDateRange(data);
+        return queryBuilder.and(
+            queryBuilder.rangeConstraint(Constants.CREATED_ON_CONSTRAINT_NAME, StructuredQueryBuilder.Operator.GE, dateRange.get("startDateTime")),
+            queryBuilder.rangeConstraint(Constants.CREATED_ON_CONSTRAINT_NAME, StructuredQueryBuilder.Operator.LT, dateRange.get("endDateTime"))
+        );
+    }
 
-        // Converting the date in string format from yyyy-MM-dd format to yyyy-MM-dd HH:mm:ss format
-        // Adding 1 day to end date to get docs harmonized on the end date as well.
-        LocalDate endDate = LocalDate.parse(data.getRangeValues().getUpperBound(), DATE_FORMAT)
-                .plusDays(1);
-        String endDateTime = endDate.atStartOfDay(ZoneId.systemDefault()).format(DATE_TIME_FORMAT);
+    public Map<String, String> computeDateRange(DocSearchQueryInfo.FacetData data) {
+        Map<String, String> dateRange = new HashMap<>();
+        String timeRange = "Custom";
+        int zoneOffset = 0;
 
-        return queryBuilder
-                .and(queryBuilder.rangeConstraint(Constants.CREATED_ON_CONSTRAINT_NAME, StructuredQueryBuilder.Operator.GE, startDateTime),
-                        queryBuilder.rangeConstraint(Constants.CREATED_ON_CONSTRAINT_NAME, StructuredQueryBuilder.Operator.LT, endDateTime));
+        if(data.getStringValues().size() > 0) {
+            timeRange = data.getStringValues().get(0);
+        }
 
+        if(data.getStringValues().size() > 1) {
+            zoneOffset = Integer.parseInt(data.getStringValues().get(1));
+        }
+
+        ZoneId zoneId = ZoneId.ofOffset("UTC", ZoneOffset.ofTotalSeconds(zoneOffset*60));
+        ZonedDateTime startDate = LocalDate.now().atStartOfDay(zoneId);
+        ZonedDateTime endDate = LocalDate.now().atStartOfDay(zoneId);
+        String startDateTime;
+        String endDateTime;
+
+        switch (timeRange) {
+            case "Today":
+                startDateTime = startDate.toLocalDate().atStartOfDay(zoneId).format(DATE_TIME_FORMAT);
+                dateRange.put("startDateTime", startDateTime);
+                endDateTime = endDate.plusDays(1).toLocalDate().atStartOfDay(zoneId).format(DATE_TIME_FORMAT);
+                dateRange.put("endDateTime", endDateTime);
+                break;
+
+            case "This Week":
+                startDateTime = startDate.plusDays((-1) * (startDate.getDayOfWeek().getValue() % 7)).format(DATE_TIME_FORMAT);
+                dateRange.put("startDateTime", startDateTime);
+                endDateTime = endDate.plusDays(1).toLocalDate().atStartOfDay(zoneId).format(DATE_TIME_FORMAT);
+                dateRange.put("endDateTime", endDateTime);
+                break;
+
+            case "This Month":
+                startDate = startDate.with(TemporalAdjusters.firstDayOfMonth());
+                startDateTime = startDate.toLocalDate().atStartOfDay(zoneId).format(DATE_TIME_FORMAT);
+                dateRange.put("startDateTime", startDateTime);
+                endDateTime = endDate.plusDays(1).toLocalDate().atStartOfDay(zoneId).format(DATE_TIME_FORMAT);
+                dateRange.put("endDateTime", endDateTime);
+                break;
+
+            case "Custom":
+                if(!data.getRangeValues().getLowerBound().isEmpty() && !data.getRangeValues().getUpperBound().isEmpty()) {
+                    try {
+                        startDateTime = ZonedDateTime.parse(data.getRangeValues().getLowerBound()).format(DATE_TIME_FORMAT);
+                        endDateTime = ZonedDateTime.parse(data.getRangeValues().getUpperBound()).plusDays(1).format(DATE_TIME_FORMAT);
+                    } catch (DateTimeParseException dtpe) {
+                        startDate = LocalDate.parse(data.getRangeValues().getLowerBound()).atStartOfDay().atZone(ZoneOffset.UTC);
+                        endDate = LocalDate.parse(data.getRangeValues().getUpperBound()).atStartOfDay().atZone(ZoneOffset.UTC);
+                        startDateTime = startDate.format(DATE_TIME_FORMAT);
+                        endDateTime = endDate.plusDays(1).format(DATE_TIME_FORMAT);
+                    }
+                    dateRange.put("startDateTime", startDateTime);
+                    dateRange.put("endDateTime", endDateTime);
+                } else {
+                    throw new DataHubException("The date range is missing for createdOn in your request");
+                }
+                break;
+        }
+        return dateRange;
     }
 }
