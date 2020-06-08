@@ -15,45 +15,64 @@
  */
 'use strict';
 
+const ds = require("/data-hub/5/data-services/ds-utils.sjs");
 // TODO Will move this to /data-hub/5/entities soon
 const entityLib = require("/data-hub/5/impl/entity-lib.sjs");
-const DataHub = require("/data-hub/5/datahub.sjs");
-const datahub = new DataHub();
 
-
+/**
+ * If the entity instance cannot be found for any search result, that fact is logged instead of an error being thrown or
+ * trace logging being used. This ensures that the condition appears in logging, but it should not throw an error
+ * because other entities in the search results may be able to have properties added for them.
+ * 
+ * @param entityName
+ * @param searchResponse
+ */
 function addPropertiesToSearchResponse(entityName, searchResponse) {
   const maxDefaultProperties = 5;
-  const allProperties = generateEntityProperties("", entityName, entityName);
-  const defaultProperties = allProperties.slice(0, maxDefaultProperties);
+
+  const entityModel = entityLib.findModelByEntityName(entityName);
+  if (!entityModel) {
+    ds.throwServerError(`Could not add entity properties to search response; could not find an entity model for entity name: ${entityName}`);
+  }
+
+  const propertyMetadata = buildPropertyMetadata("", entityModel, entityName);
+  const selectedPropertyMetadata = propertyMetadata.slice(0, maxDefaultProperties);
 
   // Add entityProperties to each search result
   searchResponse.results.forEach(result => {
-    let instance = {};
+    result.entityProperties = [];
+
+    let instance = null;
     try {
       instance = cts.doc(result.uri).toObject().envelope.instance;
     } catch (error) {
-      datahub.debug.log({message: error, type: 'error'});
-      return;
+      console.log(`Unable to obtain entity instance from document with URI '${result.uri}'; will not add entity properties to its search result`);
     }
 
-    const entityInstance = instance[entityName];
-    result.entityProperties = [];
-    defaultProperties.forEach(parentProperty => {
-      result.entityProperties.push(getPropertyValues(parentProperty, entityInstance));
-    });
+    if (instance != null) {
+      const entityInstance = instance[entityName];
+      if (!entityInstance) {
+        console.log(`Unable to obtain entity instance from document with URI '${result.uri}' and entity name '${entityName}'; will not add entity properties to its search result`);
+      } else {
+        selectedPropertyMetadata.forEach(parentProperty => {
+          result.entityProperties.push(getPropertyValues(parentProperty, entityInstance));
+        });
+      }
+    }
   });
 
   // Make it easy for the client to know which property names were used, and which ones exist
-  searchResponse.selectedPropertyDefinitions = defaultProperties;
-  searchResponse.entityPropertyDefinitions = allProperties;
+  searchResponse.selectedPropertyDefinitions = selectedPropertyMetadata;
+  searchResponse.entityPropertyDefinitions = propertyMetadata;
 }
 
-function generateEntityProperties(parentPropertyName, entityName, entityTypeName) {
-  const allProperties = [];
-  const entityType = entityLib.findEntityTypeFromModelByEntityName(entityName, entityTypeName);
-  if(!entityType) {
-    return allProperties;
+function buildPropertyMetadata(parentPropertyName, entityModel, entityName) {
+  const entityType = entityModel.definitions[entityName];
+  if (!entityType) {
+    ds.throwServerError("Could not build property metadata; could not find entity type with name: " + entityName);
   }
+
+  const allPropertyMetadata = [];
 
   for (var propertyName of Object.keys(entityType.properties)) {
     const property = entityType.properties[propertyName];
@@ -69,15 +88,18 @@ function generateEntityProperties(parentPropertyName, entityName, entityTypeName
     propertyMetadata["datatype"] = (isSimpleProperty || isSimpleArrayProperty) ? (isSimpleProperty ? property.datatype : property["items"]["datatype"]) : "object";
     propertyMetadata["multiple"] = (isSimpleArrayProperty || isStructuredArrayProperty) ? true : false;
 
-    if(isStructuredProperty || isStructuredArrayProperty) {
+    if (isStructuredProperty || isStructuredArrayProperty) {
       let referenceInfo = isStructuredProperty ? property["$ref"].split("/") : property["items"]["$ref"].split("/");
-      entityTypeName =  referenceInfo.pop();
-      entityName = referenceInfo[0] === "#" ? entityName : referenceInfo.pop().toString().split("-")[0];
-      propertyMetadata["properties"] = generateEntityProperties(propertyMetadata["propertyPath"], entityName, entityTypeName);
+      if (referenceInfo[0] !== "#") {
+        // As of 5.3.0, relationship properties are ignored; we won't include data from them in search results
+        continue;
+      }
+      entityName = referenceInfo.pop();
+      propertyMetadata["properties"] = buildPropertyMetadata(propertyMetadata["propertyPath"], entityModel, entityName);
     }
-    allProperties.push(propertyMetadata);
+    allPropertyMetadata.push(propertyMetadata);
   }
-  return allProperties;
+  return allPropertyMetadata;
 }
 
 function getPropertyValues(currentProperty, entityInstance) {
@@ -120,5 +142,6 @@ function getPropertyValues(currentProperty, entityInstance) {
 }
 
 module.exports = {
-  addPropertiesToSearchResponse
+  addPropertiesToSearchResponse,
+  buildPropertyMetadata
 };
