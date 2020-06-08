@@ -8,6 +8,7 @@
     "Address": {
       "Shipping": {
         "Street": "Whitwell Place",
+        "Street2": "More info",
         "City": "Ellerslie",
         "State": "Georgia",
         "Postal": "52239-1718"

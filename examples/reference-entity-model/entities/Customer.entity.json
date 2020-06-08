@@ -62,8 +62,11 @@
       "wordLexicon": [ ],
       "properties": {
         "street": {
-          "datatype": "string",
-          "collation": "http://marklogic.com/collation/codepoint"
+          "datatype": "array",
+          "items": {
+            "datatype": "string",
+            "collation": "http://marklogic.com/collation/codepoint"
+          }
         },
         "city": {
           "datatype": "string",
