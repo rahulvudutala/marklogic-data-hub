@@ -22,6 +22,7 @@ import java.util.Optional;
 public class SearchQuery {
 
   private DocSearchQueryInfo query;
+  private List<String> propertiesToDisplay;
   private long start;
   private long pageLength;
   private List<SortOrder> sortOrder;
@@ -60,6 +61,14 @@ public class SearchQuery {
 
   public void setSortOrder(List<SortOrder> sortOrder) {
     this.sortOrder = sortOrder;
+  }
+
+  public List<String> getPropertiesToDisplay() {
+    return propertiesToDisplay;
+  }
+
+  public void setPropertiesToDisplay(List<String> propertiesToDisplay) {
+    this.propertiesToDisplay = propertiesToDisplay;
   }
 
   public final static class SortOrder {

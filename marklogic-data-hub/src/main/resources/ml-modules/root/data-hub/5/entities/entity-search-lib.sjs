@@ -19,24 +19,28 @@ const ds = require("/data-hub/5/data-services/ds-utils.sjs");
 // TODO Will move this to /data-hub/5/entities soon
 const entityLib = require("/data-hub/5/impl/entity-lib.sjs");
 
+let selectedPropertyMetadata = null;
+let selectedProperties = null;
+
 /**
  * If the entity instance cannot be found for any search result, that fact is logged instead of an error being thrown or
  * trace logging being used. This ensures that the condition appears in logging, but it should not throw an error
  * because other entities in the search results may be able to have properties added for them.
- * 
+ *
  * @param entityName
  * @param searchResponse
  */
-function addPropertiesToSearchResponse(entityName, searchResponse) {
+function addPropertiesToSearchResponse(entityName, searchResponse, propertiesToDisplay) {
   const maxDefaultProperties = 5;
-
+  selectedPropertyMetadata = [];
+  selectedProperties = typeof propertiesToDisplay === 'string' ? propertiesToDisplay.split(",") :  propertiesToDisplay;
   const entityModel = entityLib.findModelByEntityName(entityName);
   if (!entityModel) {
     ds.throwServerError(`Could not add entity properties to search response; could not find an entity model for entity name: ${entityName}`);
   }
 
   const propertyMetadata = buildPropertyMetadata("", entityModel, entityName);
-  const selectedPropertyMetadata = propertyMetadata.slice(0, maxDefaultProperties);
+  selectedPropertyMetadata = selectedPropertyMetadata.length > 0 ? selectedPropertyMetadata : propertyMetadata.slice(0, maxDefaultProperties);
 
   // Add entityProperties to each search result
   searchResponse.results.forEach(result => {
@@ -55,7 +59,7 @@ function addPropertiesToSearchResponse(entityName, searchResponse) {
         console.log(`Unable to obtain entity instance from document with URI '${result.uri}' and entity name '${entityName}'; will not add entity properties to its search result`);
       } else {
         selectedPropertyMetadata.forEach(parentProperty => {
-          result.entityProperties.push(getPropertyValues(parentProperty, entityInstance));
+          result.entityProperties.push(getPropertyValuesFromInstance(parentProperty, getInstanceFromPropertyPath(parentProperty, entityInstance)));
         });
       }
     }
@@ -66,6 +70,8 @@ function addPropertiesToSearchResponse(entityName, searchResponse) {
   searchResponse.entityPropertyDefinitions = propertyMetadata;
 }
 
+// This function builds the logical entityType property metadata for all entityType properties from an entityModel.
+// This also builds selected entityType property metadata provided by user during entity search
 function buildPropertyMetadata(parentPropertyName, entityModel, entityName) {
   const entityType = entityModel.definitions[entityName];
   if (!entityType) {
@@ -98,13 +104,19 @@ function buildPropertyMetadata(parentPropertyName, entityModel, entityName) {
       propertyMetadata["properties"] = buildPropertyMetadata(propertyMetadata["propertyPath"], entityModel, entityName);
     }
     allPropertyMetadata.push(propertyMetadata);
+
+    if(selectedProperties && selectedProperties.includes(propertyMetadata.propertyPath)) {
+      selectedPropertyMetadata.push(propertyMetadata);
+    }
   }
   return allPropertyMetadata;
 }
 
-function getPropertyValues(currentProperty, entityInstance) {
+// Helper function used by getPropertyValuesFromInstance to fetch property values from a propertyPath
+function getPropertyPathValues(currentProperty, entityInstance) {
   let resultObject = {};
   resultObject.propertyPath = currentProperty.propertyPath;
+
   if(currentProperty.datatype === "object") {
     resultObject.propertyValue = [];
 
@@ -120,7 +132,7 @@ function getPropertyValues(currentProperty, entityInstance) {
         let childPropertyName = Object.keys(instance)[0];
         instance = instance[childPropertyName];
         currentProperty.properties.forEach((property) => {
-          currentPropertyValueArray.push(getPropertyValues(property, instance));
+          currentPropertyValueArray.push(getPropertyPathValues(property, instance));
         });
         resultObject.propertyValue.push(currentPropertyValueArray);
       });
@@ -129,7 +141,7 @@ function getPropertyValues(currentProperty, entityInstance) {
       let childPropertyName = Object.keys(entityInstance[propertyName])[0];
       entityInstance = entityInstance[propertyName][childPropertyName];
       currentProperty.properties.forEach((property) => {
-        currentPropertyValueArray.push(getPropertyValues(property, entityInstance));
+        currentPropertyValueArray.push(getPropertyPathValues(property, entityInstance));
       });
       resultObject.propertyValue.push(currentPropertyValueArray);
     }
@@ -139,6 +151,81 @@ function getPropertyValues(currentProperty, entityInstance) {
         (currentProperty.multiple ? [] : "");
   }
   return resultObject;
+}
+
+// This function fetches the appropriate instance property values for first level simple, structured property paths and
+// other levels of structured entity properties from the propertyPath.
+function getPropertyValuesFromInstance(currentProperty, entityInstance) {
+  let resultObject = {};
+  resultObject.propertyPath = currentProperty.propertyPath;
+
+  if(Array.isArray(entityInstance)) {
+    let propertyValuesArray = [];
+    entityInstance.forEach((instance) => {
+      let propertyValue = getPropertyPathValues(currentProperty, instance).propertyValue;
+      if(Array.isArray(propertyValue)) {
+        propertyValue.forEach((propertyValue) => {
+          propertyValuesArray.push(propertyValue);
+        });
+      } else {
+        propertyValuesArray.push(propertyValue);
+      }
+    });
+    resultObject.propertyValue = propertyValuesArray;
+  } else {
+    resultObject.propertyValue =  getPropertyPathValues(currentProperty, entityInstance).propertyValue;
+  }
+  return resultObject;
+}
+
+// This function fetches the appropriate instance for first level simple, structured property paths and other levels of
+// structured entity properties from the propertyPath.
+function getInstanceFromPropertyPath(currentProperty, entityInstance) {
+  let splitPropertyNames = currentProperty.propertyPath.split(".");
+  splitPropertyNames.pop();
+
+  if(splitPropertyNames.length > 0) {
+    splitPropertyNames.forEach((propertyName) => {
+      let propertyInstanceArray = [];
+      if(Array.isArray(entityInstance)) {
+        entityInstance.forEach(instance => {
+          if(!instance[propertyName]) {
+            return;
+          }
+          const propertyInstance = getInstance(propertyName, instance[propertyName]);
+          if(Array.isArray(propertyInstance)) {
+            propertyInstanceArray.concat(propertyInstance);
+          } else {
+            propertyInstanceArray.push(propertyInstance);
+          }
+        });
+        entityInstance = propertyInstanceArray;
+      } else {
+        if(!entityInstance[propertyName]) {
+          return;
+        }
+        entityInstance = getInstance(propertyName, entityInstance[propertyName]);
+      }
+    });
+  }
+  return entityInstance;
+}
+
+// Helper function used by getInstanceFromPropertyPath
+function getInstance(propertyName, entityInstance) {
+  let childPropertyName = null;
+  let instanceArray = [];
+  if(Array.isArray(entityInstance)) {
+    childPropertyName = Object.keys(entityInstance[0])[0];
+    entityInstance.forEach((propertyInstance) => {
+      instanceArray.push(propertyInstance[childPropertyName]);
+    });
+    entityInstance = instanceArray;
+  } else {
+    childPropertyName = Object.keys(entityInstance)[0];
+    entityInstance = entityInstance[childPropertyName];
+  }
+  return entityInstance;
 }
 
 module.exports = {
