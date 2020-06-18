@@ -19,9 +19,6 @@ const ds = require("/data-hub/5/data-services/ds-utils.sjs");
 // TODO Will move this to /data-hub/5/entities soon
 const entityLib = require("/data-hub/5/impl/entity-lib.sjs");
 
-let selectedPropertyMetadata = null;
-let selectedProperties = null;
-
 /**
  * If the entity instance cannot be found for any search result, that fact is logged instead of an error being thrown or
  * trace logging being used. This ensures that the condition appears in logging, but it should not throw an error
@@ -32,14 +29,19 @@ let selectedProperties = null;
  */
 function addPropertiesToSearchResponse(entityName, searchResponse, propertiesToDisplay) {
   const maxDefaultProperties = 5;
-  selectedPropertyMetadata = [];
-  selectedProperties = typeof propertiesToDisplay === 'string' ? propertiesToDisplay.split(",") :  propertiesToDisplay;
+  const selectedPropertyNames = typeof propertiesToDisplay === 'string' ? propertiesToDisplay.split(",") :  propertiesToDisplay;
   const entityModel = entityLib.findModelByEntityName(entityName);
   if (!entityModel) {
     ds.throwServerError(`Could not add entity properties to search response; could not find an entity model for entity name: ${entityName}`);
   }
 
-  const propertyMetadata = buildPropertyMetadata("", entityModel, entityName);
+  const allMetadata = buildAllMetadata("", entityModel, entityName);
+  const propertyMetadata = allMetadata["allPropertiesMetadata"];
+
+  let selectedPropertyMetadata = [];
+  if(selectedPropertyNames) {
+    selectedPropertyMetadata = buildSelectedPropertiesMetadata(allMetadata, selectedPropertyNames);
+  }
   selectedPropertyMetadata = selectedPropertyMetadata.length > 0 ? selectedPropertyMetadata : propertyMetadata.slice(0, maxDefaultProperties);
 
   // Add entityProperties to each search result
@@ -59,26 +61,26 @@ function addPropertiesToSearchResponse(entityName, searchResponse, propertiesToD
         console.log(`Unable to obtain entity instance from document with URI '${result.uri}' and entity name '${entityName}'; will not add entity properties to its search result`);
       } else {
         selectedPropertyMetadata.forEach(parentProperty => {
-          result.entityProperties.push(getPropertyValuesFromInstance(parentProperty, getInstanceFromPropertyPath(parentProperty, entityInstance)));
+          result.entityProperties.push(getPropertyValues(parentProperty, entityInstance));
         });
       }
     }
   });
-
   // Make it easy for the client to know which property names were used, and which ones exist
+  // searchResponse.selectedPropertyDefinitions = selectedPropertyMetadata;
   searchResponse.selectedPropertyDefinitions = selectedPropertyMetadata;
   searchResponse.entityPropertyDefinitions = propertyMetadata;
 }
 
 // This function builds the logical entityType property metadata for all entityType properties from an entityModel.
-// This also builds selected entityType property metadata provided by user during entity search
-function buildPropertyMetadata(parentPropertyName, entityModel, entityName) {
+function buildAllMetadata(parentPropertyName, entityModel, entityName) {
   const entityType = entityModel.definitions[entityName];
   if (!entityType) {
     ds.throwServerError("Could not build property metadata; could not find entity type with name: " + entityName);
   }
 
-  const allPropertyMetadata = [];
+  const allPropertiesMetadata = [];
+  let granularPropertyMetadata = {};
 
   for (var propertyName of Object.keys(entityType.properties)) {
     const property = entityType.properties[propertyName];
@@ -89,10 +91,19 @@ function buildPropertyMetadata(parentPropertyName, entityModel, entityName) {
     const isStructuredArrayProperty = property.datatype == "array" && (property["items"] && property["items"]["$ref"]);
 
     const propertyMetadata = {};
+    const propertyMetadataObject = {};
+
     propertyMetadata["propertyPath"] = parentPropertyName ? parentPropertyName + "." + propertyName : propertyName;
+    propertyMetadataObject["propertyPath"] = propertyMetadata["propertyPath"];
+
     propertyMetadata["propertyLabel"] = propertyName;
+    propertyMetadataObject["propertyLabel"] = propertyName;
+
     propertyMetadata["datatype"] = (isSimpleProperty || isSimpleArrayProperty) ? (isSimpleProperty ? property.datatype : property["items"]["datatype"]) : "object";
+    propertyMetadataObject["datatype"] = propertyMetadata["datatype"];
+
     propertyMetadata["multiple"] = (isSimpleArrayProperty || isStructuredArrayProperty) ? true : false;
+    propertyMetadataObject["multiple"] = propertyMetadata["multiple"];
 
     if (isStructuredProperty || isStructuredArrayProperty) {
       let referenceInfo = isStructuredProperty ? property["$ref"].split("/") : property["items"]["$ref"].split("/");
@@ -101,19 +112,125 @@ function buildPropertyMetadata(parentPropertyName, entityModel, entityName) {
         continue;
       }
       entityName = referenceInfo.pop();
-      propertyMetadata["properties"] = buildPropertyMetadata(propertyMetadata["propertyPath"], entityModel, entityName);
-    }
-    allPropertyMetadata.push(propertyMetadata);
+      const metaData = buildAllMetadata(propertyMetadata["propertyPath"], entityModel, entityName);
+      propertyMetadata["properties"] = metaData["allPropertiesMetadata"];
+      propertyMetadataObject["properties"] = metaData["allPropertiesMetadata"];
 
-    if(selectedProperties && selectedProperties.includes(propertyMetadata.propertyPath)) {
-      selectedPropertyMetadata.push(propertyMetadata);
+      granularPropertyMetadata = {...granularPropertyMetadata, ...metaData["granularPropertyMetadata"]};
     }
+    granularPropertyMetadata[propertyMetadataObject["propertyPath"]] = propertyMetadataObject;
+    allPropertiesMetadata.push(propertyMetadata);
   }
-  return allPropertyMetadata;
+
+  const allMetadata = {};
+  allMetadata["allPropertiesMetadata"] = allPropertiesMetadata;
+  allMetadata["granularPropertyMetadata"] = granularPropertyMetadata;
+
+  return allMetadata;
 }
 
-// Helper function used by getPropertyValuesFromInstance to fetch property values from a propertyPath
-function getPropertyPathValues(currentProperty, entityInstance) {
+// This function builds the logical entityType property metadata for all entityType properties from metadata
+// built by buildAllMetadata.
+function buildPropertyMetadata(parentPropertyName, entityModel, entityName) {
+  let metaData = buildAllMetadata(parentPropertyName, entityModel, entityName);
+  return metaData["allPropertiesMetadata"];
+}
+
+// This function builds the logical entityType property metadata for selected entityType properties by user from metadata
+// built by buildAllMetadata.
+function buildSelectedPropertiesMetadata(allMetadata, selectedPropertyNames) {
+  const granularPropertyMetadata = JSON.parse(JSON.stringify(allMetadata["granularPropertyMetadata"]));
+  const selectedPropertyDefinitions = {};
+  const selectedPropertyDefinitionsArray = [];
+
+  selectedPropertyNames.forEach((selectedPropertyName) => {
+    const selectedPropertyNameArray = selectedPropertyName.split(".");
+    const actualSelectedPropertyName = selectedPropertyNameArray.pop();
+
+    if(selectedPropertyNameArray.length > 0) {
+      const parentPropertyName = selectedPropertyNameArray[0];
+      if(selectedPropertyDefinitions[parentPropertyName]) {
+        selectedPropertyDefinitions[parentPropertyName] = updateSelectedPropertyMetadata(selectedPropertyName, selectedPropertyDefinitions, granularPropertyMetadata);
+      } else {
+        let finalMetadataProperty = buildAndCacheSelectedPropertyMetadata(selectedPropertyName, selectedPropertyDefinitions, granularPropertyMetadata);
+        if(Object.keys(finalMetadataProperty).length > 0) {
+          selectedPropertyDefinitions[parentPropertyName] = finalMetadataProperty;
+        }
+      }
+    } else {
+      if(granularPropertyMetadata[actualSelectedPropertyName]) {
+        selectedPropertyDefinitionsArray.push(granularPropertyMetadata[actualSelectedPropertyName]);
+      }
+    }
+  });
+
+  Object.keys(selectedPropertyDefinitions).forEach(key => selectedPropertyDefinitionsArray.push(selectedPropertyDefinitions[key]));
+  return selectedPropertyDefinitionsArray;
+}
+
+function updateSelectedPropertyMetadata(selectedPropertyName, selectedPropertyDefinitions, granularPropertyMetadata) {
+  const selectedPropertyNameArray = selectedPropertyName.split(".");
+  const actualSelectedPropertyName = selectedPropertyNameArray.pop();
+  const parentPropertyName = selectedPropertyNameArray[0];
+  let structuredPropertyPath = "";
+  let updatedMetadataObject = JSON.parse(JSON.stringify(selectedPropertyDefinitions[parentPropertyName]));
+  let temporaryMetadataObject = updatedMetadataObject;
+
+  selectedPropertyNameArray.forEach((propertyName) => {
+    propertyName = structuredPropertyPath ? structuredPropertyPath + "." + propertyName : propertyName;
+    structuredPropertyPath = propertyName;
+
+    if(Array.isArray(temporaryMetadataObject)) {
+      if(temporaryMetadataObject.map(property => property.propertyPath).includes(propertyName)) {
+        temporaryMetadataObject = temporaryMetadataObject.find(property => property.propertyPath === propertyName)["properties"];
+      } else {
+        let missingProperty = granularPropertyMetadata[structuredPropertyPath];
+        missingProperty['properties'] = [];
+        temporaryMetadataObject.push(missingProperty);
+        temporaryMetadataObject = temporaryMetadataObject.find(property => property.propertyPath === propertyName)["properties"];
+      }
+    } else {
+      temporaryMetadataObject = temporaryMetadataObject["properties"];
+    }
+  });
+  temporaryMetadataObject.push(JSON.parse(JSON.stringify(granularPropertyMetadata[structuredPropertyPath + "." + actualSelectedPropertyName])));
+  return updatedMetadataObject;
+}
+
+function buildAndCacheSelectedPropertyMetadata(selectedPropertyName, selectedPropertyDefinitions, granularPropertyMetadata) {
+  const selectedPropertyNameArray = selectedPropertyName.split(".");
+  const actualSelectedPropertyName = selectedPropertyNameArray.pop();
+  // const parentPropertyName = selectedPropertyNameArray[0];
+  let structuredPropertyPath = "";
+  let selectedPropertyMetadataBuilder = [];
+
+  selectedPropertyNameArray.forEach((propertyName) => {
+    propertyName = structuredPropertyPath ? structuredPropertyPath + "." + propertyName : propertyName;
+    structuredPropertyPath = propertyName;
+    let metadataObject = granularPropertyMetadata[propertyName] ? JSON.parse(JSON.stringify(granularPropertyMetadata[propertyName])) : {};
+    delete metadataObject["properties"];
+    selectedPropertyMetadataBuilder.push(metadataObject);
+  });
+  if(granularPropertyMetadata[structuredPropertyPath + "." + actualSelectedPropertyName]) {
+    selectedPropertyMetadataBuilder.push(granularPropertyMetadata[structuredPropertyPath + "." + actualSelectedPropertyName]);
+  } else {
+    selectedPropertyMetadataBuilder = [];
+  }
+  selectedPropertyMetadataBuilder.reverse();
+
+  let currentProperties = [];
+  let finalMetadataProperty = {};
+  selectedPropertyMetadataBuilder.forEach((metadataProperty) => {
+    if(currentProperties.length > 0) {
+      metadataProperty["properties"] = currentProperties;
+    }
+    currentProperties = [].concat(JSON.parse(JSON.stringify(metadataProperty)));
+    finalMetadataProperty = currentProperties.length > 0 ? metadataProperty : {};
+  });
+  return finalMetadataProperty;
+}
+
+function getPropertyValues(currentProperty, entityInstance) {
   let resultObject = {};
   resultObject.propertyPath = currentProperty.propertyPath;
 
@@ -132,7 +249,7 @@ function getPropertyPathValues(currentProperty, entityInstance) {
         let childPropertyName = Object.keys(instance)[0];
         instance = instance[childPropertyName];
         currentProperty.properties.forEach((property) => {
-          currentPropertyValueArray.push(getPropertyPathValues(property, instance));
+          currentPropertyValueArray.push(getPropertyValues(property, instance));
         });
         resultObject.propertyValue.push(currentPropertyValueArray);
       });
@@ -141,7 +258,7 @@ function getPropertyPathValues(currentProperty, entityInstance) {
       let childPropertyName = Object.keys(entityInstance[propertyName])[0];
       entityInstance = entityInstance[propertyName][childPropertyName];
       currentProperty.properties.forEach((property) => {
-        currentPropertyValueArray.push(getPropertyPathValues(property, entityInstance));
+        currentPropertyValueArray.push(getPropertyValues(property, entityInstance));
       });
       resultObject.propertyValue.push(currentPropertyValueArray);
     }
@@ -153,82 +270,7 @@ function getPropertyPathValues(currentProperty, entityInstance) {
   return resultObject;
 }
 
-// This function fetches the appropriate instance property values for first level simple, structured property paths and
-// other levels of structured entity properties from the propertyPath.
-function getPropertyValuesFromInstance(currentProperty, entityInstance) {
-  let resultObject = {};
-  resultObject.propertyPath = currentProperty.propertyPath;
-
-  if(Array.isArray(entityInstance)) {
-    let propertyValuesArray = [];
-    entityInstance.forEach((instance) => {
-      let propertyValue = getPropertyPathValues(currentProperty, instance).propertyValue;
-      if(Array.isArray(propertyValue)) {
-        propertyValue.forEach((propertyValue) => {
-          propertyValuesArray.push(propertyValue);
-        });
-      } else {
-        propertyValuesArray.push(propertyValue);
-      }
-    });
-    resultObject.propertyValue = propertyValuesArray;
-  } else {
-    resultObject.propertyValue =  getPropertyPathValues(currentProperty, entityInstance).propertyValue;
-  }
-  return resultObject;
-}
-
-// This function fetches the appropriate instance for first level simple, structured property paths and other levels of
-// structured entity properties from the propertyPath.
-function getInstanceFromPropertyPath(currentProperty, entityInstance) {
-  let splitPropertyNames = currentProperty.propertyPath.split(".");
-  splitPropertyNames.pop();
-
-  if(splitPropertyNames.length > 0) {
-    splitPropertyNames.forEach((propertyName) => {
-      let propertyInstanceArray = [];
-      if(Array.isArray(entityInstance)) {
-        entityInstance.forEach(instance => {
-          if(!instance[propertyName]) {
-            return;
-          }
-          const propertyInstance = getInstance(propertyName, instance[propertyName]);
-          if(Array.isArray(propertyInstance)) {
-            propertyInstanceArray.concat(propertyInstance);
-          } else {
-            propertyInstanceArray.push(propertyInstance);
-          }
-        });
-        entityInstance = propertyInstanceArray;
-      } else {
-        if(!entityInstance[propertyName]) {
-          return;
-        }
-        entityInstance = getInstance(propertyName, entityInstance[propertyName]);
-      }
-    });
-  }
-  return entityInstance;
-}
-
-// Helper function used by getInstanceFromPropertyPath
-function getInstance(propertyName, entityInstance) {
-  let childPropertyName = null;
-  let instanceArray = [];
-  if(Array.isArray(entityInstance)) {
-    childPropertyName = Object.keys(entityInstance[0])[0];
-    entityInstance.forEach((propertyInstance) => {
-      instanceArray.push(propertyInstance[childPropertyName]);
-    });
-    entityInstance = instanceArray;
-  } else {
-    childPropertyName = Object.keys(entityInstance)[0];
-    entityInstance = entityInstance[childPropertyName];
-  }
-  return entityInstance;
-}
-
 module.exports = {
   addPropertiesToSearchResponse,
-  buildPropertyMetadata
+  buildPropertyMetadata: buildPropertyMetadata
 };

@@ -210,62 +210,82 @@ function verifyStructuredSelectedPropertiesResults() {
   };
   const sallyExpectedResult = [
     {
-      "propertyPath": "shipping.zip.fiveDigit",
-      "propertyValue": [
-        "52239",
-        "94070"
-      ]
-    },
-    {
-      "propertyPath": "shipping.zip",
+      "propertyPath": "shipping",
       "propertyValue": [
         [
           {
-            "propertyPath": "shipping.zip.fiveDigit",
-            "propertyValue": "52239"
+            "propertyPath": "shipping.street",
+            "propertyValue": "Whitwell Place"
           },
           {
-            "propertyPath": "shipping.zip.plusFour",
-            "propertyValue": "1718"
+            "propertyPath": "shipping.zip",
+            "propertyValue": [
+              [
+                {
+                  "propertyPath": "shipping.zip.fiveDigit",
+                  "propertyValue": "52239"
+                }
+              ]
+            ]
           }
         ],
         [
           {
-            "propertyPath": "shipping.zip.fiveDigit",
-            "propertyValue": "94070"
+            "propertyPath": "shipping.street",
+            "propertyValue": "Skyway road"
           },
           {
-            "propertyPath": "shipping.zip.plusFour",
-            "propertyValue": "1234"
+            "propertyPath": "shipping.zip",
+            "propertyValue": [
+              [
+                {
+                  "propertyPath": "shipping.zip.fiveDigit",
+                  "propertyValue": "94070"
+                }
+              ]
+            ]
           }
         ]
       ]
     },
     {
-      "propertyPath": "billing.zip.fiveDigit",
-      "propertyValue": "62601"
-    },
-    {
-      "propertyPath": "billing.zip",
+      "propertyPath": "billing",
       "propertyValue": [
         [
           {
-            "propertyPath": "billing.zip.fiveDigit",
-            "propertyValue": "62601"
+            "propertyPath": "billing.zip",
+            "propertyValue": [
+              [
+                {
+                  "propertyPath": "billing.zip.fiveDigit",
+                  "propertyValue": "62601"
+                }
+              ]
+            ]
           },
           {
-            "propertyPath": "billing.zip.plusFour",
-            "propertyValue": "6783"
+            "propertyPath": "billing.street",
+            "propertyValue": "Anna Court"
           }
         ]
       ]
     }
   ];
-  const selectedProperties = ["shipping.zip", "billing.zip", "shipping.zip.fiveDigit", "billing.zip.fiveDigit"];
+  const selectedProperties = ["shipping.street", "shipping.zip.fiveDigit", "billing.zip.fiveDigit", "billing.street"];
   entitySearchLib.addPropertiesToSearchResponse(entityName, response, selectedProperties);
   test.assertEqual(sallyExpectedResult, response.results[1].entityProperties);
-  test.assertEqual(4, response.selectedPropertyDefinitions.length);
+  test.assertEqual(2, response.selectedPropertyDefinitions.length);
   test.assertEqual(7, response.entityPropertyDefinitions.length);
+
+  const selectedMetadata = response.selectedPropertyDefinitions;
+  test.assertEqual("shipping", selectedMetadata[0].propertyPath);
+  test.assertEqual("shipping.street", selectedMetadata[0].properties[0].propertyPath);
+  test.assertEqual("shipping.zip", selectedMetadata[0].properties[1].propertyPath);
+  test.assertEqual("shipping.zip.fiveDigit", selectedMetadata[0].properties[1].properties[0].propertyPath);
+  test.assertEqual("billing", selectedMetadata[1].propertyPath);
+  test.assertEqual("billing.zip", selectedMetadata[1].properties[0].propertyPath);
+  test.assertEqual("billing.zip.fiveDigit", selectedMetadata[1].properties[0].properties[0].propertyPath);
+  test.assertEqual("billing.street", selectedMetadata[1].properties[1].propertyPath);
 }
 
 function verifyResultsWithoutSelectedProperties() {
