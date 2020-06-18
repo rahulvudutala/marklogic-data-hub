@@ -16,6 +16,7 @@
  */
 package com.marklogic.hub.central.entities.search.models;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +30,7 @@ public class SearchQuery {
 
   public SearchQuery() {
     this.query = new DocSearchQueryInfo();
+    this.propertiesToDisplay = new ArrayList<>();
   }
 
   public DocSearchQueryInfo getQuery() {
