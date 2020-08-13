@@ -1,11 +1,4 @@
 {
-  "_scale": 1,
-  "editDescription": false,
-  "editBaseUri": false,
-  "editing": false,
-  "hasDocs": false,
-  "dragging": false,
-  "transform": "translate(10, 115) scale(1)",
   "filename": null,
   "hubUi": {
     "vertices": {},
@@ -15,71 +8,73 @@
     "height": 166
   },
   "info": {
-    "baseUri": null,
+    "baseUri": "http://example.org/",
     "description": null,
     "title": "prod-entity",
     "version": "0.0.1"
   },
-  "definition": {
-    "description": null,
-    "primaryKey": null,
-    "required": [],
-    "elementRangeIndex": [],
-    "rangeIndex": [],
-    "wordLexicon": [],
-    "pii": [],
-    "properties": [
-      {
-        "showCollation": false,
-        "isPrimaryKey": false,
-        "hasElementRangeIndex": false,
-        "hasRangeIndex": false,
-        "hasWordLexicon": false,
-        "required": false,
-        "pii": false,
-        "UNICODE_COLLATION": "http://marklogic.com/collation/codepoint",
-        "selected": false,
-        "connected": false,
-        "hovering": false,
-        "name": "sku",
-        "datatype": "string",
-        "collation": "http://marklogic.com/collation/codepoint",
-        "$ref": null
-      },
-      {
-        "showCollation": false,
-        "isPrimaryKey": false,
-        "hasElementRangeIndex": false,
-        "hasRangeIndex": false,
-        "hasWordLexicon": false,
-        "required": false,
-        "pii": false,
-        "UNICODE_COLLATION": "http://marklogic.com/collation/codepoint",
-        "selected": false,
-        "connected": false,
-        "hovering": false,
-        "name": "title",
-        "datatype": "string",
-        "collation": "http://marklogic.com/collation/codepoint",
-        "$ref": null
-      },
-      {
-        "showCollation": false,
-        "isPrimaryKey": false,
-        "hasElementRangeIndex": false,
-        "hasRangeIndex": false,
-        "hasWordLexicon": false,
-        "required": false,
-        "pii": false,
-        "UNICODE_COLLATION": "http://marklogic.com/collation/codepoint",
-        "selected": false,
-        "connected": false,
-        "hovering": false,
-        "name": "price",
-        "datatype": "decimal",
-        "$ref": null
-      }
-    ]
+  "definitions": {
+    "prod-entity" : {
+      "description": null,
+      "primaryKey": null,
+      "required": [],
+      "elementRangeIndex": [],
+      "rangeIndex": [],
+      "wordLexicon": [],
+      "pii": [],
+      "properties": [
+        {
+          "showCollation": false,
+          "isPrimaryKey": false,
+          "hasElementRangeIndex": false,
+          "hasRangeIndex": false,
+          "hasWordLexicon": false,
+          "required": false,
+          "pii": false,
+          "UNICODE_COLLATION": "http://marklogic.com/collation/codepoint",
+          "selected": false,
+          "connected": false,
+          "hovering": false,
+          "name": "sku",
+          "datatype": "string",
+          "collation": "http://marklogic.com/collation/codepoint",
+          "$ref": null
+        },
+        {
+          "showCollation": false,
+          "isPrimaryKey": false,
+          "hasElementRangeIndex": false,
+          "hasRangeIndex": false,
+          "hasWordLexicon": false,
+          "required": false,
+          "pii": false,
+          "UNICODE_COLLATION": "http://marklogic.com/collation/codepoint",
+          "selected": false,
+          "connected": false,
+          "hovering": false,
+          "name": "title",
+          "datatype": "string",
+          "collation": "http://marklogic.com/collation/codepoint",
+          "$ref": null
+        },
+        {
+          "showCollation": false,
+          "isPrimaryKey": false,
+          "hasElementRangeIndex": false,
+          "hasRangeIndex": false,
+          "hasWordLexicon": false,
+          "required": false,
+          "pii": false,
+          "UNICODE_COLLATION": "http://marklogic.com/collation/codepoint",
+          "selected": false,
+          "connected": false,
+          "hovering": false,
+          "name": "price",
+          "datatype": "decimal",
+          "$ref": null
+        }
+      ]
+    }
   },
   "inputFlows": [],
   "harmonizeFlows": []

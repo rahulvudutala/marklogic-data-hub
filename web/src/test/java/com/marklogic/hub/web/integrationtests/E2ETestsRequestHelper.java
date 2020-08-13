@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import com.marklogic.hub.impl.HubConfigImpl;
+import com.marklogic.hub.web.service.AbstractServiceTest;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.marklogic.hub.HubTestBase;
 import com.marklogic.hub.legacy.flow.CodeFormat;
 import com.marklogic.hub.legacy.flow.DataFormat;
 import com.marklogic.hub.legacy.flow.FlowType;
@@ -25,8 +26,11 @@ import io.restassured.http.ContentType;
 import io.restassured.http.Cookie;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.stereotype.Component;
 
-public class E2ETestsRequestHelper extends HubTestBase {
+@Component
+public class E2ETestsRequestHelper extends AbstractServiceTest implements InitializingBean {
 
 	private Cookie requestCookie;
 	private int harmonizeFlowNameCount = 1;
@@ -36,7 +40,7 @@ public class E2ETestsRequestHelper extends HubTestBase {
 	private String sessionID;
 	static final protected Logger logger = LoggerFactory.getLogger(E2ETestsRequestHelper.class);
 
-	public Response initilizeProjectConfiguration() {
+	public Response initilizeProjectConfiguration(HubConfigImpl hubConfig) {
 		String projectPath = new File(PROJECT_PATH).getAbsolutePath();
 		Response projectInitResponse =
 				given()
@@ -44,7 +48,7 @@ public class E2ETestsRequestHelper extends HubTestBase {
 					.queryParam("path", projectPath)
 				.when()
 					.post("/api/projects/");
-		createLoginCredentials(projectInitResponse);
+		createLoginCredentials(projectInitResponse, hubConfig);
 
 		return projectInitResponse;
 	}
@@ -56,12 +60,11 @@ public class E2ETestsRequestHelper extends HubTestBase {
 				.when()
 					.post("/api/login");
 		if(loginResponse.statusCode() == 200) {
-			sessionID = StringUtils.substringBetween(loginResponse.getHeader("Set-Cookie"), "JSESSIONID=", ";");
+			sessionID = StringUtils.substringBetween(loginResponse.getHeader("Set-Cookie"), "SESSION=", ";");
 		}
 
 		// building cookie to use for subsequent endpoint requests
 		buildCookie();
-
 		return sessionID;
 	}
 
@@ -305,16 +308,16 @@ public class E2ETestsRequestHelper extends HubTestBase {
 	}
 
 	private void buildCookie() {
-		requestCookie = new Cookie.Builder("JSESSIONID", sessionID).setSecured(true)
+		requestCookie = new Cookie.Builder("SESSION", sessionID).setSecured(true)
 			      .setComment("session id cookie").build();
 	}
 
-	private void createLoginCredentials(Response projectInitResponse) {
+	private void createLoginCredentials(Response projectInitResponse, HubConfigImpl hubConfig) {
 		JsonPath projectInitJson = projectInitResponse.jsonPath();
 		loginInfo.projectId = projectInitJson.getInt("id");
 		loginInfo.environment = projectInitJson.getList("environments").get(0).toString();
-		loginInfo.username = user;
-		loginInfo.password = password;
+		loginInfo.username = hubConfig.getMlUsername();
+		loginInfo.password = hubConfig.getMlPassword();
 	}
 
 	private FlowModel createFlowModel(String entityName, String flowType, DataFormat dataFormat,
@@ -333,5 +336,9 @@ public class E2ETestsRequestHelper extends HubTestBase {
 	private JobQuery buildJobQuery() {
 		JobQuery jobQuery = new JobQuery();
 		return jobQuery;
+	}
+
+	public void afterPropertiesSet() throws Exception {
+		super.afterPropertiesSet();
 	}
 }
