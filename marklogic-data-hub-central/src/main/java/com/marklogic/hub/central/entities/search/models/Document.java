@@ -32,14 +32,16 @@ public class Document {
   @JsonRawValue
   private final String content;
   private final Map<String, String> metaData;
+  private final boolean isEntityInstance;
 
   private Document() {
-    this("", null);
+    this("", null, false);
   }
 
-  public Document(String content, Map<String, String> metaData) {
+  public Document(String content, Map<String, String> metaData, boolean isEntityInstance) {
     this.content = content;
     this.metaData = (metaData != null) ? metaData : new HashMap<>();
+    this.isEntityInstance = isEntityInstance;
   }
 
   public String getContent() {
@@ -48,5 +50,9 @@ public class Document {
 
   public Map<String, String> getMetaData() {
     return metaData;
+  }
+
+  public boolean isEntityInstance() {
+    return isEntityInstance;
   }
 }

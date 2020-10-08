@@ -50,6 +50,7 @@ public interface EntitySearchService {
 
             private BaseProxy.DBFunctionRequest req_getMinAndMaxPropertyValues;
             private BaseProxy.DBFunctionRequest req_getSavedQuery;
+            private BaseProxy.DBFunctionRequest req_isEntityInstance;
             private BaseProxy.DBFunctionRequest req_deleteSavedQuery;
             private BaseProxy.DBFunctionRequest req_saveSavedQuery;
             private BaseProxy.DBFunctionRequest req_getSavedQueries;
@@ -64,6 +65,8 @@ public interface EntitySearchService {
                     "getMinAndMaxPropertyValues.sjs", BaseProxy.ParameterValuesKind.SINGLE_NODE);
                 this.req_getSavedQuery = this.baseProxy.request(
                     "getSavedQuery.sjs", BaseProxy.ParameterValuesKind.SINGLE_ATOMIC);
+                this.req_isEntityInstance = this.baseProxy.request(
+                    "isEntityInstance.sjs", BaseProxy.ParameterValuesKind.SINGLE_ATOMIC);
                 this.req_deleteSavedQuery = this.baseProxy.request(
                     "deleteSavedQuery.sjs", BaseProxy.ParameterValuesKind.SINGLE_ATOMIC);
                 this.req_saveSavedQuery = this.baseProxy.request(
@@ -103,6 +106,21 @@ public interface EntitySearchService {
                       .withParams(
                           BaseProxy.atomicParam("id", false, BaseProxy.StringType.fromString(id))
                           ).responseSingle(false, Format.JSON)
+                );
+            }
+
+            @Override
+            public Boolean isEntityInstance(String docUri) {
+                return isEntityInstance(
+                    this.req_isEntityInstance.on(this.dbClient), docUri
+                    );
+            }
+            private Boolean isEntityInstance(BaseProxy.DBFunctionRequest request, String docUri) {
+              return BaseProxy.BooleanType.toBoolean(
+                request
+                      .withParams(
+                          BaseProxy.atomicParam("docUri", false, BaseProxy.StringType.fromString(docUri))
+                          ).responseSingle(false, null)
                 );
             }
 
@@ -202,6 +220,14 @@ public interface EntitySearchService {
    * @return	as output
    */
     com.fasterxml.jackson.databind.JsonNode getSavedQuery(String id);
+
+  /**
+   * Invokes the isEntityInstance operation on the database server
+   *
+   * @param docUri	provides input
+   * @return	as output
+   */
+    Boolean isEntityInstance(String docUri);
 
   /**
    * Invokes the deleteSavedQuery operation on the database server

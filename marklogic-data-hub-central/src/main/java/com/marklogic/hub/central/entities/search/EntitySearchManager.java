@@ -42,7 +42,6 @@ import com.marklogic.hub.central.entities.search.models.DocSearchQueryInfo;
 import com.marklogic.hub.central.entities.search.models.Document;
 import com.marklogic.hub.central.entities.search.models.SearchQuery;
 import com.marklogic.hub.central.exceptions.DataHubException;
-import com.marklogic.hub.central.managers.ModelManager;
 import com.marklogic.hub.dataservices.EntitySearchService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -78,11 +77,9 @@ public class EntitySearchManager {
     private static Map<String, FacetHandler> facetHandlerMap;
     private DatabaseClient searchDatabaseClient;
     private DatabaseClient savedQueryDatabaseClient;
-    private ModelManager modelManager;
 
     public EntitySearchManager(HubClient hubClient) {
         this.searchDatabaseClient = hubClient.getFinalClient();
-        this.modelManager = new ModelManager(hubClient);
         initializeFacetHandlerMap();
     }
 
@@ -95,7 +92,6 @@ public class EntitySearchManager {
             QUERY_OPTIONS = "exp-final-entity-options";
         }
         this.savedQueryDatabaseClient = hubClient.getFinalClient();
-        this.modelManager = new ModelManager(hubClient);
         initializeFacetHandlerMap();
     }
 
@@ -150,7 +146,8 @@ public class EntitySearchManager {
         try {
             String content = docMgr.readAs(docUri, documentMetadataReadHandle, String.class);
             Map<String, String> metadata = documentMetadataReadHandle.getMetadataValues();
-            return Optional.ofNullable(new Document(content, metadata));
+            boolean isEntityInstance = EntitySearchService.on(searchDatabaseClient).isEntityInstance(docUri);
+            return Optional.ofNullable(new Document(content, metadata, isEntityInstance));
         } catch (MarkLogicServerException e) {
             if (e instanceof ResourceNotFoundException || e instanceof ForbiddenUserException) {
                 logger.warn(e.getLocalizedMessage());
