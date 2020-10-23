@@ -172,13 +172,27 @@ function getLatestJobData(entityName) {
   ));
   if (latestJob) {
     const uri = xdmp.nodeUri(latestJob);
+    let latestJobId = "";
     const response = {
       latestJobDateTime : xdmp.documentGetMetadataValue(uri, "datahubCreatedOn")
     };
     let jobIds = xdmp.documentGetMetadataValue(uri, "datahubCreatedByJob");
     if (jobIds) {
-      response.latestJobId = jobIds.split(" ").pop();
+      latestJobId = jobIds.split(" ").pop();
     }
+
+    const dataHub = DataHubSingleton.instance();
+    let targetDatabase = dataHub.config.FINALDATABASE;
+    if(latestJobId) {
+      targetDatabase = xdmp.invokeFunction(function () {
+        const jobDocument = JSON.parse(cts.doc("/jobs/" + latestJobId + "." + consts.JSON));
+        const lastAttemptedStep = jobDocument.job.lastAttemptedStep;
+        return jobDocument.job.stepResponses[lastAttemptedStep].targetDatabase;
+      }, {database: xdmp.database(dataHub.config.JOBDATABASE)});
+    }
+    response.latestJobId = latestJobId;
+    response.targetDatabase = targetDatabase;
+    response.targetDatabaseType = targetDatabase === dataHub.config.STAGINGDATABASE ? "staging" : "final";
     return response;
   }
   return null;

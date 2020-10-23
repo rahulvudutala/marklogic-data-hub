@@ -250,7 +250,8 @@ const EntityTypeTable: React.FC<Props> = (props) => {
       width: 100,
       render: text => {
         let parseText = text.split(',');
-        let instanceCount = numberConverter(parseInt(parseText[1]));
+        let targetDatabaseType = parseText[1];
+        let instanceCount = numberConverter(parseInt(parseText[2]));
 
         return (
           <>
@@ -259,7 +260,7 @@ const EntityTypeTable: React.FC<Props> = (props) => {
                 <Link
                   to={{
                     pathname: "/tiles/explore",
-                    state: { entity: parseText[0] }
+                    state: { entity: parseText[0], targetDatabase: targetDatabaseType }
                   }}
                   data-testid={parseText[0] + '-instance-count'}
                 >
@@ -288,16 +289,17 @@ const EntityTypeTable: React.FC<Props> = (props) => {
       width: 100,
       render: text => {
         let parseText = text.split(',');
-        if (parseText[1] === 'undefined') {
+        let targetDatabaseType = parseText[1];
+        if (parseText[2] === 'undefined') {
           return 'n/a';
         } else {
-          let displayDate = relativeTimeConverter(parseText[2]);
+          let displayDate = relativeTimeConverter(parseText[3]);
           return (
-            <MLTooltip title={queryDateConverter(parseText[2]) + "\n" + ModelingTooltips.lastProcessed}>
+            <MLTooltip title={queryDateConverter(parseText[3]) + "\n" + ModelingTooltips.lastProcessed}>
               <Link
                 to={{
                   pathname: "/tiles/explore",
-                  state: { entityName: parseText[0], jobId: parseText[1] }
+                  state: { entityName: parseText[0], targetDatabase: targetDatabaseType, jobId: parseText[2] }
                 }}
                 data-testid={parseText[0]+ '-last-processed'}
               >
@@ -410,8 +412,8 @@ const EntityTypeTable: React.FC<Props> = (props) => {
   const renderTableData = allEntityTypes.map((entity) => {
     return {
       entityName: entity.entityName + ',' + getEntityTypeDescription(entity),
-      instances: entity.entityName + ',' + parseInt(entity.entityInstanceCount),
-      lastProcessed: entity.entityName + ',' + entity.latestJobId + ',' + entity.latestJobDateTime,
+      instances: entity.entityName + ',' + entity.targetDatabaseType + ',' + parseInt(entity.entityInstanceCount),
+      lastProcessed: entity.entityName + ',' + entity.targetDatabaseType + ',' + entity.latestJobId + ',' + entity.latestJobDateTime,
       actions: entity.entityName,
       definitions: entity.model.definitions
     };
