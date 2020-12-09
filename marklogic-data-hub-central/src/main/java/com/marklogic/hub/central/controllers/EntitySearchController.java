@@ -20,6 +20,8 @@ package com.marklogic.hub.central.controllers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.marklogic.client.io.InputStreamHandle;
+import com.marklogic.hub.central.controllers.BaseController;
 import com.marklogic.hub.central.entities.search.EntitySearchManager;
 import com.marklogic.hub.central.entities.search.models.DocSearchQueryInfo;
 import com.marklogic.hub.central.entities.search.models.SearchQuery;
@@ -36,6 +38,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -62,35 +65,6 @@ public class EntitySearchController extends BaseController {
     @ResponseBody
     public JsonNode getRecord(@RequestParam String docUri, @RequestParam(defaultValue = "final") String database) {
         return getEntitySearchService(database).getRecord(docUri);
-    }
-
-    @RequestMapping(value = "/downloadRecord", method = RequestMethod.GET)
-    public void downloadRecord(@RequestParam String docUri, @RequestParam(defaultValue = "final") String database, HttpServletResponse response) {
-        try (OutputStream out = response.getOutputStream()) {
-            String[] docUriArray = docUri.split("/");
-            String fileName = docUriArray[docUriArray.length-1];
-            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-            response.addHeader("Content-Disposition", String.format("attachment; filename=%s", fileName));
-
-            byte[] bytes = null;
-            JsonNode record = getEntitySearchService(database).getRecord(docUri);
-            if(null == record || null == record.get("data")) {
-                throw new RuntimeException(String.format("Unable to download record with URI: %s as document does not exist", docUri));
-            }
-
-            if(record.get("recordType").asText().equals("binary")) {
-                bytes = Hex.decodeHex(record.get("data").asText().toCharArray());
-            } else if(record.get("recordType").asText().equals("json")) {
-                ObjectWriter prettyWriter = new HubCentralManager().buildPrettyWriter();
-                bytes = prettyWriter.writeValueAsString(record.get("data")).getBytes();
-            } else {
-                bytes = record.get("data").asText().getBytes();
-            }
-            out.write(bytes);
-            response.flushBuffer();
-        } catch (IOException | DecoderException e) {
-            throw new RuntimeException(String.format("Unable to download record with URI: %s with cause: %s", docUri, e.getMessage()));
-        }
     }
 
     @RequestMapping(value = "/facet-values", method = RequestMethod.POST)

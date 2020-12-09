@@ -22,11 +22,10 @@ const entitySearchLib = require("/data-hub/5/entities/entity-search-lib.sjs");
 var docUri;
 const record = {};
 const doc = cts.doc(docUri);
-const prettyXmlOptions = {indentUntyped: 'yes', omitXmlDeclaration: 'no'};
 
 if(doc) {
     const nodeKind = xdmp.nodeKind(doc.root);
-    record["data"] = nodeKind === 'element' ? xdmp.quote(doc, prettyXmlOptions) : doc;
+    record["data"] = doc;
     record["recordMetadata"] = xdmp.documentGetMetadata(docUri);
     record["isHubEntityInstance"] = entitySearchLib.isHubEntityInstance(docUri);
     record["recordType"] = getDocumentType(nodeKind);

@@ -2,9 +2,6 @@ package com.marklogic.hub.central.controllers;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.marklogic.client.DatabaseClient;
-import com.marklogic.client.document.DocumentManager;
-import com.marklogic.client.io.BytesHandle;
 import com.marklogic.client.io.Format;
 import com.marklogic.hub.central.AbstractMvcTest;
 import com.marklogic.hub.impl.Versions;
@@ -22,15 +19,16 @@ import java.io.StringReader;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class EntitySearchControllerTest extends AbstractMvcTest {
 
     private final static String BASE_URL = "/api/entitySearch";
     private final static String SAVED_QUERIES_PATH = BASE_URL + "/savedQueries";
-    private final static String DOWNLOAD_RECORD_PATH = BASE_URL + "/downloadRecord";
     private final static String EXPORT_PATH = BASE_URL + "/export";
 
     private ObjectNode savedQueryResponse;
@@ -216,67 +214,6 @@ public class EntitySearchControllerTest extends AbstractMvcTest {
                 });
     }
 
-    @Test
-    void testDownloadJsonRecord() throws Exception {
-        runAsDataHubDeveloper();
-        String docUri = "/jsonDocument.json";
-        String json = "{\n" +
-                "  \"test\": {\n" +
-                "    \"name\": \"EntitySearch\"\n" +
-                "  }\n" +
-                "}";
-        byte[] expectedBytes =  json.getBytes();
-        DatabaseClient dbClient = getHubClient().getStagingClient();
-        writeAndValidateDownloadRecord(dbClient.newJSONDocumentManager(), docUri, "staging", expectedBytes);
-    }
-
-    @Test
-    void testDownloadXmlRecord() throws Exception {
-        runAsDataHubDeveloper();
-        String docUri = "/xmlDocument.xml";
-        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<test>\n" +
-                "  <name>EntitySearch</name>\n" +
-                "</test>";
-        byte[] expectedBytes =  xml.getBytes();
-        DatabaseClient dbClient = getHubClient().getStagingClient();
-        writeAndValidateDownloadRecord(dbClient.newXMLDocumentManager(), docUri, "staging", expectedBytes);
-    }
-
-    @Test
-    void testDownloadTextRecord() throws Exception {
-        runAsDataHubDeveloper();
-        String docUri = "/textDocument.txt";
-        byte[] expectedBytes =  "test text record download".getBytes();
-        DatabaseClient dbClient = getHubClient().getStagingClient();
-        writeAndValidateDownloadRecord(dbClient.newTextDocumentManager(), docUri, "staging", expectedBytes);
-    }
-
-    @Test
-    void testDownloadBinaryRecord() throws Exception {
-        runAsDataHubDeveloper();
-        String docUri = "/binaryDocument";
-        DatabaseClient dbClient = getHubClient().getStagingClient();
-        byte[] expectedBytes =  "test binary record download".getBytes();
-        writeAndValidateDownloadRecord(dbClient.newBinaryDocumentManager(), docUri, "staging", expectedBytes);
-    }
-
-    @Test
-    void testDownloadNonExistentRecord() {
-        runAsDataHubDeveloper();
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("docUri", "/nonExisting");
-        params.add("database", "staging");
-        try {
-            getJson(DOWNLOAD_RECORD_PATH, params);
-        } catch (Exception e) {
-            assertThrows(RuntimeException.class, () -> {
-                throw e.getCause();
-            });
-            assertTrue(e.getMessage().contains("Unable to download record with URI: /nonExisting as document does not exist"));
-        }
-    }
-
     private void assertRowsAndColumns(int expectedRowCount, int totalColumns, String response) {
         int headerRow = 1;
         int totalRows = expectedRowCount + headerRow;
@@ -436,18 +373,6 @@ public class EntitySearchControllerTest extends AbstractMvcTest {
                     Set<Integer> actualRowSet = calculateHash(response);
                     assertRowsAndColumns(newLimit, totalColumns, response);
                     assertTrue(actualRowSet.contains(getHashCode(customer2Info)), "Sort order should guarantee that customer 2 is returned as the one result. Result: " + response);
-                });
-    }
-
-    private void writeAndValidateDownloadRecord(DocumentManager docMgr, String docUri, String databaseType, byte[] expectedBytes) throws Exception {
-        docMgr.write(docUri, new BytesHandle(expectedBytes));
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("docUri", docUri);
-        params.add("database", databaseType);
-        getJson(DOWNLOAD_RECORD_PATH, params)
-                .andExpect(status().isOk())
-                .andDo(result -> {
-                    assertEquals(expectedBytes.length, result.getResponse().getContentAsByteArray().length);
                 });
     }
 }
