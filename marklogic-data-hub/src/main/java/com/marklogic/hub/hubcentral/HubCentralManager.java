@@ -171,7 +171,7 @@ public class HubCentralManager extends LoggingObject {
         }
     }
 
-    protected ObjectWriter buildPrettyWriter() {
+    public ObjectWriter buildPrettyWriter() {
         ObjectMapper prettyMapper = new ObjectMapper();
         prettyMapper.enable(SerializationFeature.INDENT_OUTPUT);
         return prettyMapper.writer(new CustomPrettyPrinter());
