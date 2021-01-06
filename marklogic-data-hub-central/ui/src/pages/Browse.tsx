@@ -44,7 +44,8 @@ const Browse: React.FC<Props> = ({location}) => {
     setPageQueryOptions,
     setDatabase,
     setLatestDatabase,
-    setEntityDefinitionsArray
+    setEntityDefinitionsArray,
+    setLatestJobFacetAndCollection
   } = useContext(SearchContext);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const authorityService = useContext(AuthoritiesContext);
@@ -169,6 +170,13 @@ const Browse: React.FC<Props> = ({location}) => {
         location.state["sortOrder"],
         location.state["targetDatabase"]);
       location.state["tableView"] ? toggleTableView(true) : toggleTableView(false);
+    } else if (location.state
+        && location.state.hasOwnProperty("entityName")
+        && location.state.hasOwnProperty("targetDatabase")
+        && location.state.hasOwnProperty("jobId")
+        && location.state.hasOwnProperty("Collection")) {
+      setCardView(false);
+      setLatestJobFacetAndCollection(location.state["jobId"], location.state["Collection"], location.state["entityName"], location.state["targetDatabase"])
     } else if (location.state
       && location.state.hasOwnProperty("entityName")
       && location.state.hasOwnProperty("targetDatabase")

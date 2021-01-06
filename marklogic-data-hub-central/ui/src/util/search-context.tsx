@@ -52,6 +52,7 @@ interface ISearchContextInterface {
   setNextEntity: (option: string) => void;
   setEntityClearQuery: (option: string) => void;
   setLatestJobFacet: (vals: string, entityName: string, targetDatabase?: string) => void;
+  setLatestJobFacetAndCollection: (jobIdVals: string, collectionVals: string, entityName: string, targetDatabase?: string) => void;
   clearFacet: (constraint: string, val: string) => void;
   clearAllFacets: () => void;
   clearDateFacet: () => void;
@@ -98,6 +99,7 @@ export const SearchContext = React.createContext<ISearchContextInterface>({
   setNextEntity: () => { },
   setEntityClearQuery: () => { },
   setLatestJobFacet: () => { },
+  setLatestJobFacetAndCollection: () => { },
   clearFacet: () => { },
   clearAllFacets: () => { },
   clearDateFacet: () => { },
@@ -257,6 +259,23 @@ const SearchProvider: React.FC<{ children: any }> = ({children}) => {
   const setLatestJobFacet = (vals: string, entityName: string, targetDatabase?: string) => {
     let facets = {};
     facets = {createdByJob: {dataType: "string", stringValues: [vals]}};
+    setSearchOptions({
+      ...searchOptions,
+      start: 1,
+      selectedFacets: facets,
+      entityTypeIds: [entityName],
+      nextEntityType: entityName,
+      selectedTableProperties: [],
+      pageNumber: 1,
+      pageLength: searchOptions.pageSize,
+      zeroState: false,
+      database: targetDatabase ? targetDatabase : "final"
+    });
+  };
+
+  const setLatestJobFacetAndCollection = (jobIdValues: string, collectionValues: string, entityName: string, targetDatabase?: string) => {
+    let facets = {};
+    facets = {createdByJob: {dataType: "string", stringValues: [jobIdValues]}, Collection: {dataType: "string", stringValues: [collectionValues]}};
     setSearchOptions({
       ...searchOptions,
       start: 1,
@@ -606,6 +625,7 @@ const SearchProvider: React.FC<{ children: any }> = ({children}) => {
       clearFacet,
       clearAllFacets,
       setLatestJobFacet,
+      setLatestJobFacetAndCollection,
       clearDateFacet,
       clearRangeFacet,
       clearGreyDateFacet,
