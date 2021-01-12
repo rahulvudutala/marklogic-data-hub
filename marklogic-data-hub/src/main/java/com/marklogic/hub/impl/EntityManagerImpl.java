@@ -146,6 +146,7 @@ public class EntityManagerImpl extends LoggingObject implements EntityManager {
                 isLoaded = true;
             }
         }
+        modulesLoader.setCatchExceptions(true);
         modulesLoader.setShutdownTaskExecutorAfterLoadingModules(true);
         modulesLoader.waitForTaskExecutorToFinish();
 

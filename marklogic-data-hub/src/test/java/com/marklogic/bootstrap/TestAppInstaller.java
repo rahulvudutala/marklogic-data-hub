@@ -61,9 +61,17 @@ public class TestAppInstaller {
             // Installation should normally just take a couple minutes
             taskExecutor.setAwaitTerminationSeconds(600);
             taskExecutor.shutdown();
+            logger.info("Active threads: " + taskExecutor.getActiveCount());
             logger.info("Finished installing test app on hosts: " + Arrays.asList(hosts));
+            logger.info("After installing test apps");
+        } catch(Exception e) {
+            e.printStackTrace();
         } finally {
+            logger.info("Inside Finally");
+            System.out.println("Inside Finally");
             ctx.close();
+            logger.info("After Ctx is closed");
+            System.out.println("After Ctx is closed");
         }
     }
 

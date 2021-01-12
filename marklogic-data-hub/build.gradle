@@ -420,14 +420,18 @@ ext {
 }
 
 task bootstrap(type: JavaExec) {
-    description = "Install the test application - an instance of DHF - so that the tests can be run against it"
-    classpath = sourceSets.test.runtimeClasspath
-    main = 'com.marklogic.bootstrap.TestAppInstaller'
-    systemProperty "mlHost", mlHost
+    try {
+        description = "Install the test application - an instance of DHF - so that the tests can be run against it"
+        classpath = sourceSets.test.runtimeClasspath
+        main = 'com.marklogic.bootstrap.TestAppInstaller'
+        systemProperty "mlHost", mlHost
+    } catch(Exception e) {
+        e.printStackTrace();
+    }
 }
-bootstrap.dependsOn extractFastXmlParserZip
+//bootstrap.dependsOn extractFastXmlParserZip
 bootstrap.finalizedBy mlPrepareBundles // ensures that marklogic-unit-test is downloaded
-test.mustRunAfter bootstrap
+//test.mustRunAfter bootstrap
 
 task dhsBootstrap(type: JavaExec) {
     description = "Install the test application in a DHS instance"
