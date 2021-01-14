@@ -89,6 +89,7 @@ public class LoadUserModulesCommand extends LoadModulesCommand {
     public LoadUserModulesCommand() {
         super();
         setExecuteSortOrder(460);
+        logger.info("LoadUserModulesCommand constructor called");
     }
 
     /**
@@ -148,6 +149,7 @@ public class LoadUserModulesCommand extends LoadModulesCommand {
         modulesLoader.setModulesManager(moduleManager);
         modulesLoader.setTaskExecutor(this.threadPoolTaskExecutor);
         modulesLoader.setShutdownTaskExecutorAfterLoadingModules(false);
+//        modulesLoader.setShutdownTaskExecutorAfterLoadingModules(true);
 
         return modulesLoader;
     }
@@ -276,6 +278,7 @@ public class LoadUserModulesCommand extends LoadModulesCommand {
             e.printStackTrace();
             //throw new RuntimeException(e);
         }
+        logger.info("Active thread count in LUMC class: " + threadPoolTaskExecutor.getActiveCount());
     }
 
     public void setHubConfig(HubConfig hubConfig) {

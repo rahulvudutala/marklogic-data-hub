@@ -426,12 +426,19 @@ task bootstrap(type: JavaExec) {
         main = 'com.marklogic.bootstrap.TestAppInstaller'
         systemProperty "mlHost", mlHost
     } catch(Exception e) {
-        e.printStackTrace();
+        e.printStackTrace()
+        throw new RuntimeException()
+    }
+    doFirst {
+        println "Starting bootstrap"
+    }
+    doLast {
+        println "Ending bootstrap"
     }
 }
-//bootstrap.dependsOn extractFastXmlParserZip
+bootstrap.dependsOn extractFastXmlParserZip
 bootstrap.finalizedBy mlPrepareBundles // ensures that marklogic-unit-test is downloaded
-//test.mustRunAfter bootstrap
+test.mustRunAfter bootstrap
 
 task dhsBootstrap(type: JavaExec) {
     description = "Install the test application in a DHS instance"

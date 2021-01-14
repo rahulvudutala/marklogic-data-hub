@@ -72,6 +72,7 @@ public class TestAppInstaller {
             ctx.close();
             logger.info("After Ctx is closed");
             System.out.println("After Ctx is closed");
+//            System.exit(0);
         }
     }
 
