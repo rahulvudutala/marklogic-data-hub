@@ -69,11 +69,12 @@ function buildWhereClause(selectedFacets) {
 
   let whereClause = "WHERE";
   Object.keys(selectedFacets).forEach((facetType, index, keys) => {
+    const facetValues = selectedFacets[facetType]["stringValues"];
     if(facetType === 'startTime') {
-      const betweenCondition = selectedFacets[facetType].map(element => "'".concat(element.replace(/'/g, "''")).concat("'"));
+      const betweenCondition = facetValues.map(element => "'".concat(element.replace(/'/g, "''")).concat("'"));
       whereClause = whereClause + " " + "Job.StepResponse.stepStartTime" + " BETWEEN " + betweenCondition[0] + "AND " + betweenCondition[1];
     } else {
-      const inCondition = selectedFacets[facetType].map(element => "'".concat(element.replace(/'/g, "''")).concat("'")).join();
+      const inCondition = facetValues.map(element => "'".concat(element.replace(/'/g, "''")).concat("'")).join();
       whereClause = whereClause + " " + "Job.StepResponse.".concat(facetType) + " IN (" + inCondition + ")";
     }
 
@@ -90,15 +91,24 @@ function computeFacets(whereClause) {
 
   Object.keys(queries).forEach(column => {
     const query = queries[column];
-    const results = xdmp.sql(query, ["map", "optimize=0"]).toObject();
-    facets[column] = results.map(result => result[column]);
+    let results = xdmp.sql(query, ["map", "optimize=0"]).toObject();
+    results = results.map(result => {
+      return {
+        "name": result[column] ? result[column] : undefined,
+        "value": result[column] ? result[column] : undefined
+      }
+    });
+    facets[column] = {
+      "type": "xs:string",
+      "facetValues": results
+    };
   });
   return facets;
 }
 
 function buildFacetQueries(whereClause) {
   const tableName = "Job.StepResponse";
-  const facetableColumns = ["Job.StepResponse.stepDefinitionType", "Job.StepResponse.jobStatus", "Job.StepResponse.entityName",
+  const facetableColumns = ["Job.StepResponse.stepDefinitionType", "Job.StepResponse.jobStatus",
     "Job.StepResponse.stepName", "Job.StepResponse.flowName"];
   const queries = {};
 
